@@ -47,14 +47,14 @@ class GridWorldEnv(gym.Env):
 
         self.agents = []
 
-        # rewarding_machines = [
-        #     Environment_data.create_first_individual_rm(),
-        #     Environment_data.create_second_individual_rm()
-        # ]
         rewarding_machines = [
-            Environment_data.create_first_individual_rm_without_trust(),
-            Environment_data.create_second_individual_rm_without_trust()
+            Environment_data.create_first_individual_rm(),
+            Environment_data.create_second_individual_rm()
         ]
+        # rewarding_machines = [
+        #     Environment_data.create_first_individual_rm_without_trust(),
+        #     Environment_data.create_second_individual_rm_without_trust()
+        # ]
 
         # save the RM draw and create the agents
         for idx, agent_events in enumerate([Environment_data.agent_1_events, Environment_data.agent_2_events]):
@@ -285,8 +285,8 @@ class GridWorldEnv(gym.Env):
                 reward[agent_idx] = Environment_data.impossible_reward
 
                 if (self.open_door(agent_idx, 0, 0, 'red', openers) or
-                    self.open_door(agent_idx, 1, 0, 'blue', openers) or
-                    self.open_door(agent_idx, 1, 1, 'blue', openers)):
+                    self.open_door(agent_idx, 1, 0, 'blue_0', openers) or
+                    self.open_door(agent_idx, 1, 1, 'blue_1', openers)):
 
                     reward[agent_idx] = Environment_data.subtask_reward
 
@@ -314,29 +314,32 @@ class GridWorldEnv(gym.Env):
             if random_uniform > self.train_transition and self.next_event:
                 self.event = [self.next_event.pop(0)]
                 self.random_event = True
+                if 'blue' in self.event:
+                    self.event.append('blue_0')
+                    self.event.append('blue_1')
 
-        # if 'door_1' in self.event and self.training:
-        #     random_uniform = random.uniform(0, 1)
-        #     if random_uniform > 0.5:
-        #         self.event.append('trust')
-        #         if not np.all(self.agents[0].position == Environment_data.agents_initial_location[0]):
-        #             self.agents[0].events = Environment_data.agent_1_events_trust
-        #         elif not np.all(self.agents[1].position == Environment_data.agents_initial_location[1]):
-        #             self.agents[1].events = Environment_data.agent_2_events_trust
-        #
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] > self.task_trust[1]:
-        #     self.event.append('trust')
-        #     self.agents[0].events = Environment_data.agent_1_events_trust
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] < self.task_trust[1]:
-        #     self.event.append('trust')
-        #     self.agents[1].events = Environment_data.agent_2_events_trust
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] == self.task_trust[1]:
-        #     self.event.append('trust')
-        #     random_uniform = random.uniform(0, 1)
-        #     if random_uniform >= 0.5:
-        #         self.agents[0].events = Environment_data.agent_1_events_trust
-        #     else:
-        #         self.agents[1].events = Environment_data.agent_2_events_trust
+        # generating the trust signal
+        if 'door_1' in self.event and self.training:
+            random_uniform = random.uniform(0, 1)
+            if random_uniform > 0.5:
+                self.event.append('trust')
+                if not np.all(self.agents[0].position == Environment_data.agents_initial_location[0]):
+                    self.agents[0].events = Environment_data.agent_1_events_trust
+                elif not np.all(self.agents[1].position == Environment_data.agents_initial_location[1]):
+                    self.agents[1].events = Environment_data.agent_2_events_trust
+        elif 'door_1' in self.event and not self.training and self.task_trust[0] > self.task_trust[1]:
+            self.event.append('trust')
+            self.agents[0].events = Environment_data.agent_1_events_trust
+        elif 'door_1' in self.event and not self.training and self.task_trust[0] < self.task_trust[1]:
+            self.event.append('trust')
+            self.agents[1].events = Environment_data.agent_2_events_trust
+        elif 'door_1' in self.event and not self.training and self.task_trust[0] == self.task_trust[1]:
+            self.event.append('trust')
+            random_uniform = random.uniform(0, 1)
+            if random_uniform >= 0.5:
+                self.agents[0].events = Environment_data.agent_1_events_trust
+            else:
+                self.agents[1].events = Environment_data.agent_2_events_trust
 
         # # make random trust
         # if 'door_1' in self.event and not self.training:
@@ -350,7 +353,9 @@ class GridWorldEnv(gym.Env):
         # from the event to the correlated action
         if 'red' in self.event:
             self._doors_flag[0] = 0
-        if 'blue' in self.event:
+        if 'blue_0' in self.event:
+            self._doors_flag[1] = 0
+        if 'blue_1' in self.event:
             self._doors_flag[1] = 0
         if 'door_1' in self.event:
             self._pocket_doors_flag[0] = 0
@@ -365,6 +370,9 @@ class GridWorldEnv(gym.Env):
             for item in self.event:
                 if item in self.next_event:
                     self.next_event.remove(item)
+
+            if ('blue_0' in self.event or 'blue_1' in self.event) and 'blue' in self.next_event:
+                self.next_event.remove('blue')
 
             # step on the agent individual reward machine
             for agent_idx, agent in enumerate(self.agents):
