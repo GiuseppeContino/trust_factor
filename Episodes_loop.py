@@ -9,12 +9,17 @@ learning_rate = 0.7  # 0.8  # 0.7
 gamma = 0.9  # 0.9  # 0.85
 alpha = 0.9
 
-train_transition = 0.98  # high valuer means less environment transitions
+train_transition = 0.99  # high valuer means less environment transitions
 
 
 class Training:
 
-    def __init__(self, env_size, agent_names, max_action):
+    def __init__(
+        self,
+        env_size,
+        agent_names,
+        max_action
+    ):
 
         self.env_size = env_size
         self.agent_names = agent_names
@@ -26,21 +31,28 @@ class Training:
         self.gamma = gamma
         self.alpha = alpha
 
-    def env_step(self, environment, obs, q_tables, agent_states):
+    def env_step(
+        self,
+        environment,
+        obs,
+        q_tables
+    ):
 
         state_1 = obs['agent_1'][1] * self.env_size + obs['agent_1'][0]
         state_2 = obs['agent_2'][1] * self.env_size + obs['agent_2'][0]
 
         actions = [
-            Policy.greedy_policy(q_tables[0][agent_states[0]], state_1),
-            Policy.greedy_policy(q_tables[1][agent_states[1]], state_2),
+            Policy.greedy_policy(q_tables[0][environment.agents[0].get_state()][environment.agents[0].get_selected_task()], state_1),
+            Policy.greedy_policy(q_tables[1][environment.agents[1].get_state()][environment.agents[1].get_selected_task()], state_2),
         ]
 
-        if agent_states[0] == 6:  # 6 is the final state
+        # set to do nothing all the agents in their final state
+        if environment.agents[0].get_state() == 5:  # 6 is the final state
             actions[0] = 6  # 6 action mean no action
-        if agent_states[1] == 6:
+        if environment.agents[1].get_state() == 5:
             actions[1] = 6
 
+        # generate action dict with all agents
         actions_dict = {'agent_' + str(key + 1): value for key, value in enumerate(actions)}
 
         # Perform the environment step
@@ -49,22 +61,43 @@ class Training:
         return obs, rew, term, actions
 
     @staticmethod
-    def manual_env_step(environment):
+    def manual_env_step(
+        environment,
+    ):
 
         # select manually the agents action
         actions = []
         for i in range(2):
-            ele = int(input())
-            actions.append(ele)
+            action = int(input())
+            actions.append(action)
 
+        # generate action dict with all agents
         actions_dict = {'agent_' + str(key + 1): value for key, value in enumerate(actions)}
 
-        # Perform the environment step
+        # perform the environment step
         obs, rew, term, _, _ = environment.step(actions_dict)
 
         return obs, rew, term, actions
 
-    def simple_train(self, q_tables, agent_idx, agent_state, state, new_state, actions, rew):
+    def update_agents_states(
+        self,
+        environment,
+    ):
+
+        for agent_idx in range(self.n_agents):
+            environment.agents[agent_idx].update_state(environment.get_event())
+
+    def simple_train(
+        self,
+        environment,
+        q_tables,
+        agent_idx,
+        agent_state,
+        state,
+        new_state,
+        actions,
+        rew,
+    ):
 
         # save the actual q_value and max q_value in the state for simplify the writing
         actual_q_value = q_tables[agent_idx][agent_state][state][actions[agent_idx]]
@@ -78,52 +111,80 @@ class Training:
                                              self.gamma * max_near_q_value - actual_q_value)
                  ), 1))
 
-    def dont_skip_random_train(self, environment, q_tables, agent_idx, agent_state, state, new_state, actions, rew):
+        environment.agents[agent_idx].update_state(environment.get_event())
 
+    def dont_skip_random_train(
+        self,
+        environment,
+        q_tables,
+        agent_idx,
+        state,
+        new_state,
+        actions,
+        rew,
+    ):
+
+        agent_state = copy.copy(environment.agents[agent_idx].get_state())
+        agent_task_selected = copy.copy(environment.agents[agent_idx].get_selected_task())
+
+        # differentiate between real and fake events
         if not environment.unwrapped.get_random_event():
-            new_agent_state = copy.copy(environment.unwrapped.get_next_flags()[agent_idx])
+            environment.agents[agent_idx].update_state(environment.get_event())
+            new_agent_state = copy.copy(environment.agents[agent_idx].get_state())
         else:
             new_agent_state = copy.copy(agent_state)
+            environment.agents[agent_idx].update_state(environment.get_event())
 
         # save the actual q_value and max q_value in the state for simplify the writing
-        actual_q_value = q_tables[agent_idx][agent_state][state][actions[agent_idx]]
+        actual_q_value = q_tables[agent_idx][agent_state][agent_task_selected][state][actions[agent_idx]]
 
         # add for real RM learning
-        max_near_q_value = np.max(q_tables[agent_idx][new_agent_state][new_state])
+        max_near_q_value = np.max(q_tables[agent_idx][new_agent_state][agent_task_selected][new_state])
 
         # update the agent q_table
-        q_tables[agent_idx][agent_state][state][actions[agent_idx]] = (
+        q_tables[agent_idx][agent_state][agent_task_selected][state][actions[agent_idx]] = (
             min((actual_q_value + self.lr * (rew['agent_' + str(agent_idx + 1)] +
                                              self.gamma * max_near_q_value - actual_q_value)
                  ), 1))
 
-    def skip_random_train(self, environment, q_tables, agent_idx, agent_state, state, new_state, actions, rew):
+    def skip_random_train(
+        self,
+        environment,
+        q_tables,
+        agent_idx,
+        state,
+        new_state,
+        actions,
+        rew,
+    ):
 
-        new_agent_state = copy.copy(environment.unwrapped.get_next_flags()[agent_idx])
+        agent_state = environment.agents[agent_idx].get_state()
+        agent_task_selected = environment.agents[agent_idx].get_selected_task()
 
         # save the actual q_value and max q_value in the state for simplify the writing
-        actual_q_value = q_tables[agent_idx][agent_state][state][actions[agent_idx]]
+        actual_q_value = q_tables[agent_idx][agent_state][agent_task_selected][state][actions[agent_idx]]
 
         # add for real RM learning
-        max_near_q_value = np.max(q_tables[agent_idx][new_agent_state][new_state])
+        max_near_q_value = np.max(q_tables[agent_idx][agent_state][agent_task_selected][new_state])
 
-        # skip
+        # skip train if the event is generated by the environment
         if not environment.unwrapped.get_random_event():
 
             # update the agent q_table
-            q_tables[agent_idx][agent_state][state][actions[agent_idx]] = (
+            q_tables[agent_idx][agent_state][agent_task_selected][state][actions[agent_idx]] = (
                 min((actual_q_value + self.lr * (rew['agent_' + str(agent_idx + 1)] +
                                                  self.gamma * max_near_q_value - actual_q_value)
                      ), 1))
 
-    def training_step(self, environment, max_steps, q_tables, ):
+        environment.agents[agent_idx].update_state(environment.get_event())
+
+    def training_step(self, environment, max_steps, q_tables):
 
         # train loop for the agents
         for agent_idx, agent in enumerate(self.agent_names):
 
             # reset the environment for the single agent training
             obs, _ = environment.reset()
-            agent_state = copy.copy(environment.unwrapped.get_next_flags()[agent_idx])
 
             # single agent train
             for _ in range(max_steps):
@@ -137,10 +198,12 @@ class Training:
                     actions.append(self.max_action)
 
                 # compute the agent action
+                agent_state = environment.agents[agent_idx].get_state()
+                agent_selected_task = environment.agents[agent_idx].get_selected_task()
                 actions.append(
                     Policy.epsilon_greedy_policy(
                         environment,
-                        q_tables[agent_idx][agent_state],
+                        q_tables[agent_idx][agent_state][agent_selected_task],
                         state,
                         self.epsilon,
                     )
@@ -159,61 +222,37 @@ class Training:
                 # compute the new state
                 new_state = obs[agent][1] * self.env_size + obs[agent][0]
 
-                self.simple_train(q_tables, agent_idx, agent_state, state, new_state, actions, rew)
-                # self.skip_random_train(environment, q_tables, agent_idx, agent_state, state, new_state, actions, rew)
-                # self.dont_skip_random_train(environment, q_tables, agent_idx, agent_state, state, new_state, actions, rew)
-
-                # move up the agent_state to the next RM state
-                agent_state = copy.copy(environment.unwrapped.get_next_flags()[agent_idx])
+                # train only the agent with not the nothing action
+                if not actions[agent_idx] == self.max_action:
+                    # self.simple_train(
+                    self.dont_skip_random_train(
+                    # self.skip_random_train(
+                        environment,
+                        q_tables,
+                        agent_idx,
+                        state,
+                        new_state,
+                        actions,
+                        rew,
+                    )
 
                 # if the episode is terminated, break the loop
                 if np.any(list(term.values())):
                     break
 
-    def validation_step(self, environment, max_steps, q_tables, events_dict, trust):
+    def validation_step(self, environment, max_steps, q_tables, events_dict):
 
         # set the value for the evaluation after the training step
         obs, _ = environment.reset()
-
-        agent_states = copy.copy(environment.get_next_flags())
 
         # test policy with all agents
         for step in range(max_steps):
 
             # Perform the environment step
-            obs, rew, term, actions = self.env_step(environment, obs, q_tables, agent_states)
+            obs, rew, term, actions = self.env_step(environment, obs, q_tables)
 
-            # update the trust
-            for agent_idx in range(self.n_agents):
-
-                # update the trust if an event is occurred
-                if (list(rew.values())[agent_idx] and
-                        not agent_states[agent_idx] == environment.unwrapped.get_next_flags()[agent_idx]):
-
-                    events = environment.get_event()
-                    common_events = list(set(events) & set(environment.agents[agent_idx].get_events()))
-
-                    for common_event in common_events:
-
-                        if not common_event == 'trust' and not common_event[:-1] == 'target_':
-
-                            if (common_event == 'red' or common_event == 'blue') and actions[agent_idx] == 4:
-                                trust.n_values[agent_idx][events_dict[common_event]] += 1
-                                trust.agents_trust[agent_idx][events_dict[common_event]] = (
-                                        self.alpha * trust.agents_trust[agent_idx][events_dict[common_event]] +
-                                        (1 - self.alpha) * rew['agent_' + str(agent_idx + 1)]
-                                )
-                                break
-
-                            elif common_event[:-1] == 'door_' and actions[agent_idx] == 5:
-                                trust.n_values[agent_idx][events_dict[common_event]] += 1
-                                trust.agents_trust[agent_idx][events_dict[common_event]] = (
-                                        self.alpha * trust.agents_trust[agent_idx][events_dict[common_event]] +
-                                        (1 - self.alpha) * rew['agent_' + str(agent_idx + 1)]
-                                )
-                                break
-
-            agent_states = copy.copy(environment.get_next_flags())
+            # update the agents states
+            self.update_agents_states(environment)
 
             # if the episode is terminated, break the loop
             if np.all(list(term.values())):

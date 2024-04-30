@@ -19,8 +19,8 @@ agents_color = [
     (255, 0, 255),
 ]
 
-# agents_prob = [1, 0.5]
-agents_prob = [0.5, 1]
+agents_prob = [1, 0.5]
+# agents_prob = [0.5, 1]
 
 # actions names
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door']
@@ -29,12 +29,12 @@ actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door']
 events = ['door_2', 'door_1', 'red', 'door_3', 'blue',]
 
 # events that has to be performed if tha agents don't acquire trust, default option
-agent_1_events = ['door_1', 'red', 'blue_1', 'target_1']
-agent_2_events = ['door_2']
+# agent_1_events = ['door_1', 'red', 'blue_1', 'target_1']
+# agent_2_events = ['door_2']
 
 # events that has can occur
-# agent_1_events = ['door_1', 'red', 'blue', 'target_1']
-# agent_2_events = ['door_2', 'red', 'door_3', 'blue']
+agent_1_events = ['door_1', 'red', 'blue', 'target_1']
+agent_2_events = ['door_2', 'red', 'door_3', 'blue']
 
 # events that has to be performed if tha agents acquire trust, default option
 agent_1_events_trust = ['door_1', 'trust', 'blue_0', 'target_1']
@@ -47,7 +47,7 @@ agents_actions = [agent_1_actions, agent_2_actions]
 
 # rewards
 complete_reward = 1.0
-subtask_reward = 1.0
+subtask_reward = 0.0
 action_reward = 0.0
 impossible_reward = 0.0
 
@@ -256,5 +256,7 @@ def create_second_individual_rm_without_trust():
     automaton.add_transition((state_2, 'blue', state_5))
     automaton.add_transition((state_3, 'blue', state_5))
     automaton.add_transition((state_4, 'blue', state_5))
+
+    automaton.add_transition((state_5, 'red', state_5))
 
     return automaton
