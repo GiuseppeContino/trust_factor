@@ -19,8 +19,8 @@ agents_color = [
     (255, 0, 255),
 ]
 
-agents_prob = [1, 0.5]
-# agents_prob = [0.5, 1]
+# agents_prob = [1, 0.5]
+agents_prob = [0.5, 1]
 
 # actions names
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door']
@@ -47,7 +47,7 @@ agents_actions = [agent_1_actions, agent_2_actions]
 
 # rewards
 complete_reward = 1.0
-subtask_reward = 0.0
+subtask_reward = 1.0
 action_reward = 0.0
 impossible_reward = 0.0
 
@@ -68,7 +68,7 @@ walls = (
     ((2, 9), (3, 9)),
     # Second vertical wall
     ((5, 0), (6, 0)),
-    ((5, 2), (6, 2)),
+    ((5, 1), (6, 1)),
     ((5, 3), (6, 3)),
     ((5, 4), (6, 4)),
     ((5, 5), (6, 5)),
@@ -84,8 +84,14 @@ walls = (
     ((5, 3), (5, 4)),
     # Second horizontal wall
     ((6, 5), (6, 6)),
-    ((7, 5), (7, 6)),
+    ((8, 5), (8, 6)),
     ((9, 5), (9, 6)),
+    # third horizontal wall
+    ((0, 8), (0, 9)),
+    ((1, 8), (1, 9)),
+    # forth horizontal wall
+    ((1, 7), (1, 8)),
+    ((2, 7), (2, 8)),
 )
 
 # Doors and relative button location
@@ -94,20 +100,20 @@ doors_location = [
     [np.array((3, 7)), np.array((4, 7)), np.array((5, 7))],
 ]
 doors_button = [
-    [np.array((3, 4))],
-    [np.array((0, 9)), np.array((9, 9)), ],
+    [np.array((5, 4))],
+    [np.array((0, 9)), np.array((6, 9)), ],
 ]
 
 # Pocket doors and relative opening position
 pocket_doors_location = [
     np.array((1, 4)),
-    np.array((5, 1)),
-    np.array((8, 6)),
+    np.array((5, 2)),
+    np.array((7, 6)),
 ]
 pocket_doors_opener_position = [
     np.array((1, 3)),
-    np.array((6, 1)),
-    np.array((8, 5)),
+    np.array((6, 2)),
+    np.array((7, 5)),
 ]
 
 # how many agents are needed to complete the open door task

@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from gymnasium.envs.registration import register
 
-epochs = 1000  # 600
+epochs = 600  # 600
 max_episode_steps = 600  # 600
 test_num = 1
 
@@ -20,16 +20,15 @@ register(
     max_episode_steps=max_episode_steps,
 )
 
+events_dict = {elem: idx for idx, elem in enumerate(Environment_data.events + ['target_1'])}
+
 q_tables = np.zeros((
     len(Environment_data.agents),
     8,  # # of states of the RM
-    len(Environment_data.events),
+    len(events_dict),
     Environment_data.size * Environment_data.size,
     len(Environment_data.actions),
 ))
-
-events = Environment_data.events
-events_dict = {elem: idx for idx, elem in enumerate(events)}
 
 trust = Trust.Trust(
     len(Environment_data.agents),
@@ -42,12 +41,20 @@ train_env = gym.make(
     training=True,
     train_transition=Episodes_loop.train_transition,
     tasks_trust=trust,
+    dict_event_to_state=events_dict,
 )
 
 valid_env = gym.make(
     id='GridWorld-v0',
     # render_mode='human',
     tasks_trust=trust,
+    dict_event_to_state=events_dict,
+)
+
+show_env = gym.make(
+    id='GridWorld-v0',
+    render_mode='human',
+    dict_event_to_state=events_dict,
 )
 
 # list for plotting
@@ -69,7 +76,7 @@ for epoch in tqdm.tqdm(range(epochs)):
     )
 
     # test training every test_num value
-    if epoch % test_num == 0:
+    if (epoch + 1) % test_num == 0:
 
         epoch_step = train_wrapper.validation_step(
             valid_env,
@@ -79,6 +86,12 @@ for epoch in tqdm.tqdm(range(epochs)):
         )
         steps_list.append(epoch_step)
 
+print(Environment_data.events + ['target_1'])
+for trusts in trust.agents_trust:
+    print('#' * 10)
+    for trust in trusts:
+        print(np.format_float_positional(np.float32(trust), unique=False, precision=6))
+
 # plot the # of step during evaluation
 plt.plot(steps_list)
 plt.xlabel('Epochs')
@@ -86,11 +99,6 @@ plt.ylabel('# of steps')
 plt.show()
 
 # show the result (pass to a not trainer environment and to a full greedy policy)
-show_env = gym.make(
-    id='GridWorld-v0',
-    render_mode='human',
-)
-
 # set the value for show after the training without the trust
 obs, _ = show_env.reset()
 

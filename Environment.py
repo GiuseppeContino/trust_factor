@@ -18,7 +18,14 @@ import numpy as np
 class GridWorldEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, training=False, train_transition=0.0, tasks_trust=None):
+    def __init__(
+        self,
+        render_mode=None,
+        training=False,
+        train_transition=0.0,
+        tasks_trust=None,
+        dict_event_to_state=None,
+    ):
 
         self.size = Environment_data.size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
@@ -64,9 +71,8 @@ class GridWorldEnv(gym.Env):
                 agents_location[idx],
                 agents_color[idx],
                 agent_temp_goal,
-                # random.randint(0, len(Environment_data.events) - 1),
-                0,
-                agent_events
+                agent_events,
+                dict_event_to_state,
             ))
 
         # observation space of the action
@@ -117,34 +123,49 @@ class GridWorldEnv(gym.Env):
         self.window = None
         self.clock = None
 
-    def get_random_event(self):
+    def is_random_event(
+        self,
+    ):
         return self.random_event
 
-    def get_event(self):
+    def get_event(
+        self,
+    ):
         return self.event
 
-    def get_trust(self):
+    def get_trust(
+        self,
+    ):
         return self.tasks_trust
 
-    def _get_obs(self):
+    def _get_obs(
+        self,
+    ):
         return {
             'agent_1': self.agents[0].position,
             'agent_2': self.agents[1].position,
         }
 
-    def _get_info(self):  # TODO: maybe to change to be more accurate
+    def _get_info(
+        self,
+    ):  # TODO: maybe to change to be more accurate
         return {
             'agent_1': [np.linalg.norm(self.agents[0].position - self._targets_location[0], ord=1)],
             'agent_2': [np.linalg.norm(self.agents[1].position - self._targets_location[0], ord=1)],
         }
 
-    def reset(self, seed=None, options=None):
+    def reset(
+        self,
+        seed=None,
+        options=None,
+    ):
 
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
 
         for agent in self.agents:
             agent.reset_temporal_goal()
+            agent.select_new_task()
 
         self.next_event = copy.copy(Environment_data.events)
         self.pass_events = []
@@ -173,7 +194,11 @@ class GridWorldEnv(gym.Env):
 
         return observation, info
 
-    def agent_move(self, action, agent_idx):
+    def agent_move(
+        self,
+        action,
+        agent_idx,
+    ):
 
         direction = self._action_to_direction[action]
 
@@ -215,7 +240,14 @@ class GridWorldEnv(gym.Env):
         else:
             return Environment_data.impossible_reward
 
-    def open_door(self, agent_idx, door_idx, door_location, door_event, openers):
+    def open_door(
+        self,
+        agent_idx,
+        door_idx,
+        door_location,
+        door_event,
+        openers,
+    ):
 
         if (np.all(self.agents[agent_idx].position == self._doors_button[door_idx][door_location]) and
                 self._doors_flag[door_idx] == 1 and door_event in self.agents[agent_idx].events):
@@ -223,11 +255,22 @@ class GridWorldEnv(gym.Env):
             openers[0] += 1
             if openers[0] >= self._doors_opener[0]:
                 self.event.append(door_event)
+
+                if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
+                    self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
+                elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == door_event:
+                    self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
+
                 return True
 
         return False
 
-    def open_pocket_door(self, agent_idx, pocket_door_idx, pocket_door_event):
+    def open_pocket_door(
+        self,
+        agent_idx,
+        pocket_door_idx,
+        pocket_door_event,
+    ):
 
         random_float = random.uniform(0, 1)
 
@@ -236,25 +279,39 @@ class GridWorldEnv(gym.Env):
 
             if random_float < Environment_data.agents_prob[agent_idx]:  # and the event is in the selected one:
                 self.event.append(pocket_door_event)
-                if self.tasks_trust:
+                if self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
-            elif self.tasks_trust:
+                elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
+                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+            elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
 
             return True
 
         return False
 
-    def reach_target(self, agent_idx, target_idx, target_event):
+    def reach_target(
+        self,
+        agent_idx,
+        target_idx,
+        target_event,
+    ):
 
         # check of final position of the agents
         if np.array_equal(self.agents[agent_idx].position, self._targets_location[target_idx]):
             self.event.append(target_event)
+            if self.tasks_trust and self.agents[agent_idx].get_selected_task() == target_event:
+                self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
+            elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == target_event:
+                self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
             return True
 
         return False
 
-    def step(self, actions):
+    def step(
+        self,
+        actions,
+    ):
 
         self.event = []
         self.random_event = False
@@ -396,11 +453,6 @@ class GridWorldEnv(gym.Env):
             #                 # print(self.next_event[random.randint(0, len(self.next_event) - 1)])
             #                 pass
 
-            # update the pass event
-            for element in self.event:
-                if element not in self.pass_events:
-                    self.pass_events.append(element)
-
         # compute the reward dict
         reward_dict = {'agent_' + str(key + 1): value for key, value in enumerate(reward)}
 
@@ -420,11 +472,15 @@ class GridWorldEnv(gym.Env):
 
         return observation, reward_dict, terminated_dict, False, info
 
-    def render(self):
+    def render(
+        self,
+    ):
         if self.render_mode == 'rgb_array':
             return self._render_frame()
 
-    def _render_frame(self):
+    def _render_frame(
+        self,
+    ):
         if self.window is None and self.render_mode == 'human':
             pygame.init()
             pygame.display.init()
@@ -587,7 +643,9 @@ class GridWorldEnv(gym.Env):
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
 
-    def close(self):
+    def close(
+        self
+    ):
         if self.window is not None:
             pygame.display.quit()
             pygame.quit()
