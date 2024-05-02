@@ -258,10 +258,9 @@ class GridWorldEnv(gym.Env):
 
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
                     self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
+                    return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == door_event:
                     self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
-
-                return True
 
         return False
 
@@ -277,18 +276,17 @@ class GridWorldEnv(gym.Env):
         if (np.all(self.agents[agent_idx].position == self._pocket_doors_opener_position[pocket_door_idx]) and
                 self._pocket_doors_flag[pocket_door_idx] == 1):
 
-            if random_float < Environment_data.agents_prob[agent_idx]:  # and the event is in the selected one:
+            if random_float < Environment_data.agents_prob[agent_idx]:
                 self.event.append(pocket_door_event)
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
+                    return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
 
-            return True
-
-        return False
+            return False
 
     def reach_target(
         self,
@@ -495,9 +493,39 @@ class GridWorldEnv(gym.Env):
                 self.window_size / self.size
         )  # The size of a single grid square in pixels
 
-        agent_path = path.join(path.dirname(__file__), 'images/agent.png')
-        agent_img = pygame.transform.scale(
-            pygame.image.load(agent_path), (pix_square_size, pix_square_size)
+        agent_def_path = path.join(path.dirname(__file__), 'images/agent_def.png')
+        agent_def_img = pygame.transform.scale(
+            pygame.image.load(agent_def_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_red_path = path.join(path.dirname(__file__), 'images/agent_red.png')
+        agent_red_img = pygame.transform.scale(
+            pygame.image.load(agent_red_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_blue_path = path.join(path.dirname(__file__), 'images/agent_blue.png')
+        agent_blue_img = pygame.transform.scale(
+            pygame.image.load(agent_blue_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_one_path = path.join(path.dirname(__file__), 'images/agent_one.png')
+        agent_one_img = pygame.transform.scale(
+            pygame.image.load(agent_one_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_two_path = path.join(path.dirname(__file__), 'images/agent_two.png')
+        agent_two_img = pygame.transform.scale(
+            pygame.image.load(agent_two_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_three_path = path.join(path.dirname(__file__), 'images/agent_three.png')
+        agent_three_img = pygame.transform.scale(
+            pygame.image.load(agent_three_path), (pix_square_size, pix_square_size)
+        )
+
+        agent_target_path = path.join(path.dirname(__file__), 'images/agent_target.png')
+        agent_target_img = pygame.transform.scale(
+            pygame.image.load(agent_target_path), (pix_square_size, pix_square_size)
         )
 
         closed_door_path = path.join(path.dirname(__file__), 'images/closed_door.png')
@@ -580,6 +608,21 @@ class GridWorldEnv(gym.Env):
 
         # Now we draw the agents
         for agent in self.agents:
+            match agent.get_selected_task():
+                case 'blue':
+                    agent_img = agent_blue_img
+                case 'red':
+                    agent_img = agent_red_img
+                case 'door_1':
+                    agent_img = agent_one_img
+                case 'door_2':
+                    agent_img = agent_two_img
+                case 'door_3':
+                    agent_img = agent_three_img
+                case 'target_1':
+                    agent_img = agent_target_img
+                case _:
+                    agent_img = agent_def_img
             canvas.blit(
                 agent_img,
                 pygame.Rect(

@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from gymnasium.envs.registration import register
 
-epochs = 600  # 600
+epochs = 1000  # 600
 max_episode_steps = 600  # 600
 test_num = 1
 
@@ -66,6 +66,12 @@ train_wrapper = Episodes_loop.Training(
     len(Environment_data.actions),
 )
 
+trust_lists = []
+for agent_idx in range(len(Environment_data.agents)):
+    trust_lists.append([])
+    for _ in range(len(events_dict)):
+        trust_lists[agent_idx].append([0.5])
+
 # epoch training loop
 for epoch in tqdm.tqdm(range(epochs)):
 
@@ -74,6 +80,10 @@ for epoch in tqdm.tqdm(range(epochs)):
         max_episode_steps,
         q_tables,
     )
+
+    for agent_idx in range(len(Environment_data.agents)):
+        for trust_idx in range(len(events_dict)):
+            trust_lists[agent_idx][trust_idx].append(trust.agents_trust[agent_idx][trust_idx])
 
     # test training every test_num value
     if (epoch + 1) % test_num == 0:
@@ -86,16 +96,70 @@ for epoch in tqdm.tqdm(range(epochs)):
         )
         steps_list.append(epoch_step)
 
-print(Environment_data.events + ['target_1'])
-for trusts in trust.agents_trust:
-    print('#' * 10)
-    for trust in trusts:
-        print(np.format_float_positional(np.float32(trust), unique=False, precision=6))
-
 # plot the # of step during evaluation
 plt.plot(steps_list)
 plt.xlabel('Epochs')
 plt.ylabel('# of steps')
+plt.show()
+
+fig = plt.figure(figsize=(12, 8))
+
+fig.legend(loc='upper right')
+
+ax1 = fig.add_subplot(231)
+ax2 = fig.add_subplot(232)
+ax3 = fig.add_subplot(233)
+ax4 = fig.add_subplot(234)
+ax5 = fig.add_subplot(235)
+ax6 = fig.add_subplot(236)
+
+ax1.title.set_text((Environment_data.events + ['target_1'])[0] + ' trust')
+ax2.title.set_text((Environment_data.events + ['target_1'])[1] + ' trust')
+ax3.title.set_text((Environment_data.events + ['target_1'])[2] + ' trust')
+ax4.title.set_text((Environment_data.events + ['target_1'])[3] + ' trust')
+ax5.title.set_text((Environment_data.events + ['target_1'])[4] + ' trust')
+ax6.title.set_text((Environment_data.events + ['target_1'])[5] + ' trust')
+
+ax1.set(xlabel='Epochs', ylabel='Trust')
+ax2.set(xlabel='Epochs', ylabel='Trust')
+ax3.set(xlabel='Epochs', ylabel='Trust')
+ax4.set(xlabel='Epochs', ylabel='Trust')
+ax5.set(xlabel='Epochs', ylabel='Trust')
+ax6.set(xlabel='Epochs', ylabel='Trust')
+
+ax1.set_ylim([-0.15, 1.15])
+ax2.set_ylim([-0.15, 1.15])
+ax3.set_ylim([-0.15, 1.15])
+ax4.set_ylim([-0.15, 1.15])
+ax5.set_ylim([-0.15, 1.15])
+ax6.set_ylim([-0.15, 1.15])
+
+ax1.plot(trust_lists[0][0], 'y', label='agent_1')
+ax1.plot(trust_lists[1][0], 'm', label='agent_2')
+ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+ax2.plot(trust_lists[0][1], 'y', label='agent_1')
+ax2.plot(trust_lists[1][1], 'm', label='agent_2')
+ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+ax3.plot(trust_lists[0][2], 'y', label='agent_1')
+ax3.plot(trust_lists[1][2], 'm', label='agent_2')
+ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+ax4.plot(trust_lists[0][3], 'y', label='agent_1')
+ax4.plot(trust_lists[1][3], 'm', label='agent_2')
+ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+ax5.plot(trust_lists[0][4], 'y', label='agent_1')
+ax5.plot(trust_lists[1][4], 'm', label='agent_2')
+ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+ax6.plot(trust_lists[0][5], 'y', label='agent_1')
+ax6.plot(trust_lists[1][5], 'm', label='agent_2')
+ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+plt.ylim(-0.15, 1.15)
+fig.tight_layout(pad=0.75)
 plt.show()
 
 # show the result (pass to a not trainer environment and to a full greedy policy)

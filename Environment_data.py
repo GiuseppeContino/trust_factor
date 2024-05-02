@@ -20,7 +20,8 @@ agents_color = [
 ]
 
 # agents_prob = [1, 0.5]
-agents_prob = [0.5, 1]
+# agents_prob = [0.5, 1]
+agents_prob = [1, 1]
 
 # actions names
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door']
