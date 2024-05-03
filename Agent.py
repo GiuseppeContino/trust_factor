@@ -7,13 +7,11 @@ class Agent:
     def __init__(
         self,
         position: list,
-        color: list,
         temporal_goal,
         events,
         dict_event_to_state,
     ):
         self.position = position
-        self.color = color
         self.temporal_goal = temporal_goal
         self.state = temporal_goal.current_state - 1
         self.events = events
@@ -28,11 +26,6 @@ class Agent:
     ):
         return self.position
 
-    def get_color(
-        self,
-    ):
-        return self.color
-
     def get_state(
         self,
     ):
@@ -42,6 +35,7 @@ class Agent:
         self,
         event,
     ):
+
         common_events = list(
             set(event) & set(self.events)
         )
@@ -53,6 +47,7 @@ class Agent:
     def reset_temporal_goal(
         self,
     ):
+
         self.temporal_goal.reset()
         self.state = self.temporal_goal.current_state - 1
 
@@ -88,6 +83,7 @@ class Agent:
         self,
         new_selected_task,
     ):
+
         self.selected_task = new_selected_task
 
     def get_events(

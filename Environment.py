@@ -1,6 +1,7 @@
 import random
 import copy
 from os import path
+from sympy import *
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -44,17 +45,11 @@ class GridWorldEnv(gym.Env):
         # agents initial position and colors
         agents_location = Environment_data.agents_initial_location
 
-        agents_color = Environment_data.agents_color
-
         self.agents = []
 
-        # rewarding_machines = [
-        #     Environment_data.create_first_individual_rm(),
-        #     Environment_data.create_second_individual_rm()
-        # ]
         rewarding_machines = [
-            Environment_data.create_first_individual_rm_without_trust(),
-            Environment_data.create_second_individual_rm_without_trust()
+            Environment_data.create_first_individual_rm(),
+            Environment_data.create_second_individual_rm()
         ]
 
         # save the RM draw and create the agents
@@ -69,7 +64,6 @@ class GridWorldEnv(gym.Env):
 
             self.agents.append(Agent.Agent(
                 agents_location[idx],
-                agents_color[idx],
                 agent_temp_goal,
                 agent_events,
                 dict_event_to_state,
@@ -172,7 +166,6 @@ class GridWorldEnv(gym.Env):
         self.random_event = False
 
         if self.tasks_trust:
-            # self.tasks_trust.reset()
             self.tasks_trust.reset_n_values()
 
         # Reset agents position
@@ -228,7 +221,7 @@ class GridWorldEnv(gym.Env):
         ):
             collision = True
 
-        # We use `np.clip` to make sure we don't leave the grid
+        #  use np.clip to make sure we don't leave the grid
         if not collision:
 
             self.agents[agent_idx].position = np.clip(
@@ -257,10 +250,13 @@ class GridWorldEnv(gym.Env):
                 self.event.append(door_event)
 
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
-                    self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
+                    # TODO: adjust the 'if self.training:'
+                    if self.training:
+                        self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == door_event:
-                    self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
+                    if self.training:
+                        self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
 
         return False
 
@@ -279,12 +275,15 @@ class GridWorldEnv(gym.Env):
             if random_float < Environment_data.agents_prob[agent_idx]:
                 self.event.append(pocket_door_event)
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
-                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
+                    if self.training:
+                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
-                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                    if self.training:
+                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
-                self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                if self.training:
+                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
 
             return False
 
@@ -299,9 +298,11 @@ class GridWorldEnv(gym.Env):
         if np.array_equal(self.agents[agent_idx].position, self._targets_location[target_idx]):
             self.event.append(target_event)
             if self.tasks_trust and self.agents[agent_idx].get_selected_task() == target_event:
-                self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
+                if self.training:
+                    self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
             elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == target_event:
-                self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
+                if self.training:
+                    self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
             return True
 
         return False
@@ -314,9 +315,7 @@ class GridWorldEnv(gym.Env):
         self.event = []
         self.random_event = False
 
-        # reward = [-0.001, -0.001]
         reward = [0.0, 0.0]
-
         openers = [0, 0]
 
         for agent_idx, action in enumerate(list(actions.values())):
@@ -331,14 +330,11 @@ class GridWorldEnv(gym.Env):
 
                 reward[agent_idx] = Environment_data.impossible_reward
 
-                if (self.open_door(agent_idx, 0, 0, 'red', openers) or
-                    self.open_door(agent_idx, 1, 0, 'blue', openers) or
-                    self.open_door(agent_idx, 1, 1, 'blue', openers)):
-
-                # need for trust RM
-                # if (self.open_door(agent_idx, 0, 0, 'red', openers) or
-                #     self.open_door(agent_idx, 1, 0, 'blue_0', openers) or
-                #     self.open_door(agent_idx, 1, 1, 'blue_1', openers)):
+                if (
+                        self.open_door(agent_idx, 0, 0, 'red', openers) or
+                        self.open_door(agent_idx, 1, 0, 'blue', openers) or
+                        self.open_door(agent_idx, 1, 1, 'blue', openers)
+                ):
 
                     reward[agent_idx] = Environment_data.subtask_reward
 
@@ -347,9 +343,11 @@ class GridWorldEnv(gym.Env):
 
                 reward[agent_idx] = Environment_data.impossible_reward
 
-                if (self.open_pocket_door(agent_idx, 0, 'door_1') or
-                    self.open_pocket_door(agent_idx, 1, 'door_2') or
-                    self.open_pocket_door(agent_idx, 2, 'door_3')):
+                if (
+                        self.open_pocket_door(agent_idx, 0, 'door_1') or
+                        self.open_pocket_door(agent_idx, 1, 'door_2') or
+                        self.open_pocket_door(agent_idx, 2, 'door_3')
+                ):
 
                     reward[agent_idx] = Environment_data.subtask_reward
 
@@ -359,56 +357,34 @@ class GridWorldEnv(gym.Env):
             if agent_idx == 1 and action == 4 and np.array_equal(self.agents[1].position, self._doors_button[1][1]):
                 reward[agent_idx] = Environment_data.complete_reward
 
-        # if event are None create a random event during training once for step
-        if self.training and not self.event:
+        # generate a fake event during training
+        if self.training and not self.event and self.next_event:
+            agent_idx = -1
+            for action_idx, action in enumerate(actions.values()):
+                if not action == 6:
+                    agent_idx = action_idx
             random_uniform = random.uniform(0, 1)
-            if random_uniform > self.train_transition and self.next_event:
-                self.event = [self.next_event.pop(0)]
-                self.random_event = True
-                if 'blue' in self.event:
-                    self.event.append('blue_0')
-                    self.event.append('blue_1')
-
-        # # generating the trust signal
-        # if 'door_1' in self.event and self.training:
-        #     random_uniform = random.uniform(0, 1)
-        #     if random_uniform > 0.5:
-        #         self.event.append('trust')
-        #         if not np.all(self.agents[0].position == Environment_data.agents_initial_location[0]):
-        #             self.agents[0].events = Environment_data.agent_1_events_trust
-        #         elif not np.all(self.agents[1].position == Environment_data.agents_initial_location[1]):
-        #             self.agents[1].events = Environment_data.agent_2_events_trust
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] > self.task_trust[1]:
-        #     self.event.append('trust')
-        #     self.agents[0].events = Environment_data.agent_1_events_trust
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] < self.task_trust[1]:
-        #     self.event.append('trust')
-        #     self.agents[1].events = Environment_data.agent_2_events_trust
-        # elif 'door_1' in self.event and not self.training and self.task_trust[0] == self.task_trust[1]:
-        #     self.event.append('trust')
-        #     random_uniform = random.uniform(0, 1)
-        #     if random_uniform >= 0.5:
-        #         self.agents[0].events = Environment_data.agent_1_events_trust
-        #     else:
-        #         self.agents[1].events = Environment_data.agent_2_events_trust
-
-        # # make random trust
-        # if 'door_1' in self.event and not self.training:
-        #     self.event.append('trust')
-        #     random_uniform = random.uniform(0, 1)
-        #     if random_uniform >= 0.5:
-        #         self.agents[0].events = Utilities.agent_1_events_trust
-        #     else:
-        #         self.agents[1].events = Utilities.agent_2_events_trust
+            if (
+                    random_uniform > self.train_transition and
+                    list(set(self.agents[agent_idx].events) - set(self.next_event))
+            ):
+                temp_state = self.agents[agent_idx].state
+                temp_goal = self.agents[agent_idx].temporal_goal.automaton.get_transitions_from(temp_state + 1)
+                atoms = []
+                for transition in temp_goal:
+                    for atom in str(sympify(transition[1])).replace(' ', '').split('&'):
+                        if not atom[0] == '~' and not atom == 'target_1':
+                            atoms.append(atom)
+                if atoms:
+                    self.event = [atoms[random.randint(0, len(atoms) - 1)]]
+                    while self.event[0] not in self.next_event:
+                        self.event = [atoms[random.randint(0, len(atoms) - 1)]]
+                    self.random_event = True
 
         # from the event to the correlated action
         if 'red' in self.event:
             self._doors_flag[0] = 0
         if 'blue' in self.event:
-            self._doors_flag[1] = 0
-        elif 'blue_0' in self.event:
-            self._doors_flag[1] = 0
-        elif 'blue_1' in self.event:
             self._doors_flag[1] = 0
         if 'door_1' in self.event:
             self._pocket_doors_flag[0] = 0
@@ -424,41 +400,20 @@ class GridWorldEnv(gym.Env):
                 if item in self.next_event:
                     self.next_event.remove(item)
 
-            if ('blue_0' in self.event or 'blue_1' in self.event) and 'blue' in self.next_event:
-                self.next_event.remove('blue')
-
-            # # step on the agent individual reward machine
-            # for agent_idx, agent in enumerate(self.agents):
-            #
-            #     common_events = list(
-            #         set(self.event) & set(agent.get_events())
-            #     )
-            #
-            #     # print("agent:", agent_idx,
-            #     #       "\nagent_state:", agent.temporal_goal.current_state,
-            #     #       "\nagent_events:", agent.events,
-            #     #       "\nactual_event:", self.event,
-            #     #       "\ncommon_events:", common_events,
-            #     #       "\nnext_event:", self.next_event)
-            #
-            #     if (common_events and common_events[0] not in self.pass_events and
-            #             agent.temporal_goal.current_state != 6):
-            #
-            #         if list(actions.values())[agent_idx] != len(Environment_data.actions):
-            #             agent.update_state(common_events)
-            #             if self.next_event:
-            #                 # print(agent.temporal_goal.automaton.get_transitions_from(agent.temporal_goal.current_state))
-            #                 # print(self.next_event[random.randint(0, len(self.next_event) - 1)])
-            #                 pass
-
         # compute the reward dict
         reward_dict = {'agent_' + str(key + 1): value for key, value in enumerate(reward)}
 
         # compute the termination dict
-        terminated = [
-            'target_1' in self.event,
-            'target_1' in self.event,
-        ]
+        if not self.training:
+            terminated = [
+                'target_1' in self.event,
+                'target_1' in self.event,
+            ]
+        else:
+            terminated = [
+                'target_1' in self.event,
+                'blue' in self.event,
+            ]
 
         terminated_dict = {'agent_' + str(key + 1): value for key, value in enumerate(terminated)}
 
@@ -486,56 +441,38 @@ class GridWorldEnv(gym.Env):
         if self.clock is None and self.render_mode == 'human':
             self.clock = pygame.time.Clock()
 
-        # canvas = pygame.Surface((self.window_size, self.window_size))
         canvas = pygame.display.set_mode((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
         pix_square_size = (
                 self.window_size / self.size
-        )  # The size of a single grid square in pixels
+        )
 
-        agent_def_path = path.join(path.dirname(__file__), 'images/agent_def.png')
         agent_def_img = pygame.transform.scale(
-            pygame.image.load(agent_def_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_def_path), (pix_square_size, pix_square_size)
         )
-
-        agent_red_path = path.join(path.dirname(__file__), 'images/agent_red.png')
         agent_red_img = pygame.transform.scale(
-            pygame.image.load(agent_red_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_red_path), (pix_square_size, pix_square_size)
         )
-
-        agent_blue_path = path.join(path.dirname(__file__), 'images/agent_blue.png')
         agent_blue_img = pygame.transform.scale(
-            pygame.image.load(agent_blue_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_blue_path), (pix_square_size, pix_square_size)
         )
-
-        agent_one_path = path.join(path.dirname(__file__), 'images/agent_one.png')
         agent_one_img = pygame.transform.scale(
-            pygame.image.load(agent_one_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_one_path), (pix_square_size, pix_square_size)
         )
-
-        agent_two_path = path.join(path.dirname(__file__), 'images/agent_two.png')
         agent_two_img = pygame.transform.scale(
-            pygame.image.load(agent_two_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_two_path), (pix_square_size, pix_square_size)
         )
-
-        agent_three_path = path.join(path.dirname(__file__), 'images/agent_three.png')
         agent_three_img = pygame.transform.scale(
-            pygame.image.load(agent_three_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_three_path), (pix_square_size, pix_square_size)
         )
-
-        agent_target_path = path.join(path.dirname(__file__), 'images/agent_target.png')
         agent_target_img = pygame.transform.scale(
-            pygame.image.load(agent_target_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.agent_target_path), (pix_square_size, pix_square_size)
         )
-
-        closed_door_path = path.join(path.dirname(__file__), 'images/closed_door.png')
         closed_door_img = pygame.transform.scale(
-            pygame.image.load(closed_door_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.closed_door_path), (pix_square_size, pix_square_size)
         )
-
-        open_door_path = path.join(path.dirname(__file__), 'images/open_door.png')
         open_door_img = pygame.transform.scale(
-            pygame.image.load(open_door_path), (pix_square_size, pix_square_size)
+            pygame.image.load(Environment_data.open_door_path), (pix_square_size, pix_square_size)
         )
 
         # Draw the target
@@ -551,7 +488,8 @@ class GridWorldEnv(gym.Env):
 
         # Draw the doors and the buttons
         for door_idx, door_path, button_path in (
-                zip(range(len(self._doors_location)), self._doors_img_paths, self._buttons_img_paths)):
+                zip(range(len(self._doors_location)), self._doors_img_paths, self._buttons_img_paths)
+        ):
 
             for door in self._doors_location[door_idx]:
 
@@ -608,21 +546,25 @@ class GridWorldEnv(gym.Env):
 
         # Now we draw the agents
         for agent in self.agents:
-            match agent.get_selected_task():
-                case 'blue':
-                    agent_img = agent_blue_img
-                case 'red':
-                    agent_img = agent_red_img
-                case 'door_1':
-                    agent_img = agent_one_img
-                case 'door_2':
-                    agent_img = agent_two_img
-                case 'door_3':
-                    agent_img = agent_three_img
-                case 'target_1':
-                    agent_img = agent_target_img
-                case _:
-                    agent_img = agent_def_img
+            if agent.get_state() == 5:
+                agent_img = agent_def_img
+            else:
+                match agent.get_selected_task():
+                    case 'blue':
+                        agent_img = agent_blue_img
+                    case 'red':
+                        agent_img = agent_red_img
+                    case 'door_1':
+                        agent_img = agent_one_img
+                    case 'door_2':
+                        agent_img = agent_two_img
+                    case 'door_3':
+                        agent_img = agent_three_img
+                    case 'target_1':
+                        agent_img = agent_target_img
+                    case _:
+                        agent_img = agent_def_img
+
             canvas.blit(
                 agent_img,
                 pygame.Rect(

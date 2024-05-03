@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from gymnasium.envs.registration import register
 
-epochs = 1000  # 600
-max_episode_steps = 600  # 600
+epochs = 1500
+max_episode_steps = 600
 test_num = 1
 
 # Register the environment
@@ -66,6 +66,7 @@ train_wrapper = Episodes_loop.Training(
     len(Environment_data.actions),
 )
 
+# start the trust lists for plotting
 trust_lists = []
 for agent_idx in range(len(Environment_data.agents)):
     trust_lists.append([])
@@ -87,12 +88,10 @@ for epoch in tqdm.tqdm(range(epochs)):
 
     # test training every test_num value
     if (epoch + 1) % test_num == 0:
-
         epoch_step = train_wrapper.validation_step(
             valid_env,
             max_episode_steps,
             q_tables,
-            events_dict,
         )
         steps_list.append(epoch_step)
 
@@ -166,9 +165,6 @@ plt.show()
 # set the value for show after the training without the trust
 obs, _ = show_env.reset()
 
-total_rew = 0
-total_step = 0
-
 # start the steps loop
 for step in tqdm.tqdm(range(max_episode_steps)):
 
@@ -179,9 +175,6 @@ for step in tqdm.tqdm(range(max_episode_steps)):
     )
 
     train_wrapper.update_agents_states(show_env)
-
-    total_rew += sum(list(rew.values()))
-    total_step += 1
 
     if np.all(list(term.values())):
         break
