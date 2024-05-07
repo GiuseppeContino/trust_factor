@@ -20,7 +20,7 @@ register(
     max_episode_steps=max_episode_steps,
 )
 
-events_dict = {elem: idx for idx, elem in enumerate(Environment_data.events + ['target_1'])}
+events_dict = {elem: idx for idx, elem in enumerate(Environment_data.events)}
 
 q_tables = np.zeros((
     len(Environment_data.agents),
@@ -54,6 +54,7 @@ valid_env = gym.make(
 show_env = gym.make(
     id='GridWorld-v0',
     render_mode='human',
+    tasks_trust=trust,
     dict_event_to_state=events_dict,
 )
 
@@ -134,14 +135,14 @@ ax5.set_ylim([-0.15, 1.15])
 ax6.set_ylim([-0.15, 1.15])
 
 ax1.plot(trust_lists[0][0], 'y', label='agent_1')
-ax1.plot(trust_lists[1][0], 'm', label='agent_2')
+# ax1.plot(trust_lists[1][0], 'm', label='agent_2')
 ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-ax2.plot(trust_lists[0][1], 'y', label='agent_1')
+# ax2.plot(trust_lists[0][1], 'y', label='agent_1')
 ax2.plot(trust_lists[1][1], 'm', label='agent_2')
 ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-ax3.plot(trust_lists[0][2], 'y', label='agent_1')
+# ax3.plot(trust_lists[0][2], 'y', label='agent_1')
 ax3.plot(trust_lists[1][2], 'm', label='agent_2')
 ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
@@ -154,7 +155,7 @@ ax5.plot(trust_lists[1][4], 'm', label='agent_2')
 ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
 ax6.plot(trust_lists[0][5], 'y', label='agent_1')
-ax6.plot(trust_lists[1][5], 'm', label='agent_2')
+# ax6.plot(trust_lists[1][5], 'm', label='agent_2')
 ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
 plt.ylim(-0.15, 1.15)

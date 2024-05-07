@@ -1,6 +1,5 @@
 import random
 import copy
-from os import path
 from sympy import *
 
 import gymnasium as gym
@@ -53,20 +52,23 @@ class GridWorldEnv(gym.Env):
         ]
 
         # save the RM draw and create the agents
-        for idx, agent_events in enumerate([Environment_data.agent_1_events, Environment_data.agent_2_events]):
+        for agent_idx, agent_events in enumerate([Environment_data.agent_1_events, Environment_data.agent_2_events]):
 
-            agent_pythomata_rm = rewarding_machines[idx]
+            agent_pythomata_rm = rewarding_machines[agent_idx]
             agent_graph = agent_pythomata_rm.to_graphviz()
-            agent_graph.render('./images/agent_' + str(idx + 1) + '_reward_machine')
+            agent_graph.render('./images/agent_' + str(agent_idx + 1) + '_reward_machine')
 
             agent_automata = RewardAutomaton(agent_pythomata_rm, 1)
             agent_temp_goal = TemporalGoal(agent_automata)
 
             self.agents.append(Agent.Agent(
-                agents_location[idx],
+                agents_location[agent_idx],
                 agent_temp_goal,
                 agent_events,
                 dict_event_to_state,
+                training,
+                self.next_event,
+                tasks_trust.get_agent_trust(agent_idx),
             ))
 
         # observation space of the action
@@ -157,16 +159,16 @@ class GridWorldEnv(gym.Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
 
-        for agent in self.agents:
-            agent.reset_temporal_goal()
-            agent.select_new_task()
-
         self.next_event = copy.copy(Environment_data.events)
         self.pass_events = []
         self.random_event = False
 
-        if self.tasks_trust:
-            self.tasks_trust.reset_n_values()
+        for agent_idx, agent in enumerate(self.agents):
+            agent.reset_temporal_goal()
+            if self.training:
+                agent.select_new_random_task(self.next_event)
+            else:
+                agent.select_new_trusted_task(self.tasks_trust.get_agent_trust(agent_idx), self.next_event)
 
         # Reset agents position
         self.agents[0].position = Environment_data.agents_initial_location[0]
@@ -233,6 +235,7 @@ class GridWorldEnv(gym.Env):
         else:
             return Environment_data.impossible_reward
 
+    # TODO: set to 0 the reward if the intention are not the 'blue'
     def open_door(
         self,
         agent_idx,
@@ -278,15 +281,16 @@ class GridWorldEnv(gym.Env):
                     if self.training:
                         self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
                     return True
-                elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
-                    if self.training:
-                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                # elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
+                #     if self.training:
+                #         self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 if self.training:
                     self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
 
             return False
 
+    # TODO: set to 0 the reward if the intention are not the 'target_1'
     def reach_target(
         self,
         agent_idx,

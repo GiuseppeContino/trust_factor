@@ -22,7 +22,7 @@ agents_prob = [1, 1]
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door',]
 
 # events that has to occur for complete the task
-events = ['door_2', 'door_1', 'red', 'door_3', 'blue',]
+events = ['door_1', 'door_2', 'door_3', 'red', 'blue', 'target_1']
 
 # important event for each agent
 agent_1_events = ['door_1', 'red', 'blue', 'target_1',]
