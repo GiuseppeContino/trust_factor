@@ -50,6 +50,9 @@ class Agent:
             set(event) & set(self.events)
         )
         if not common_events == []:
+            # print(self.state)
+            # print(event)
+            # print(self.events)
             self.temporal_goal.step(common_events)
             self.state = self.temporal_goal.current_state - 1
             if training:

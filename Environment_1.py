@@ -1,13 +1,14 @@
 import random
 import copy
 from sympy import *
+from matplotlib import pyplot as plt
 
 import gymnasium as gym
 from gymnasium import spaces
 import pygame
 
 import Agent
-import Environment_data
+import Environment_data_1 as Environment_data
 
 from temprl.reward_machines.automata import RewardAutomaton
 from temprl.wrapper import TemporalGoal
@@ -235,7 +236,6 @@ class GridWorldEnv(gym.Env):
         else:
             return Environment_data.impossible_reward
 
-    # TODO: set to 0 the reward if the intention are not the 'blue'
     def open_door(
         self,
         agent_idx,
@@ -253,7 +253,6 @@ class GridWorldEnv(gym.Env):
                 self.event.append(door_event)
 
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
-                    # TODO: adjust the 'if self.training:'
                     if self.training:
                         self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
                     return True
@@ -281,16 +280,15 @@ class GridWorldEnv(gym.Env):
                     if self.training:
                         self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
                     return True
-                # elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
-                #     if self.training:
-                #         self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
+                    if self.training:
+                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 if self.training:
                     self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
 
             return False
 
-    # TODO: set to 0 the reward if the intention are not the 'target_1'
     def reach_target(
         self,
         agent_idx,
@@ -304,10 +302,10 @@ class GridWorldEnv(gym.Env):
             if self.tasks_trust and self.agents[agent_idx].get_selected_task() == target_event:
                 if self.training:
                     self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
+                return True
             elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == target_event:
                 if self.training:
                     self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
-            return True
 
         return False
 
@@ -429,6 +427,64 @@ class GridWorldEnv(gym.Env):
 
         return observation, reward_dict, terminated_dict, False, info
 
+    def plot_trust(self, trust_list):
+
+        fig = plt.figure(figsize=(12, 8))
+
+        fig.legend(loc='upper right')
+
+        ax1 = fig.add_subplot(2, 3, 1)
+        ax2 = fig.add_subplot(2, 3, 2)
+        ax3 = fig.add_subplot(2, 3, 3)
+        ax4 = fig.add_subplot(2, 3, 4)
+        ax5 = fig.add_subplot(2, 3, 5)
+        ax6 = fig.add_subplot(2, 3, 6)
+
+        ax1.title.set_text(Environment_data.events[0] + ' trust')
+        ax2.title.set_text(Environment_data.events[1] + ' trust')
+        ax3.title.set_text(Environment_data.events[2] + ' trust')
+        ax4.title.set_text(Environment_data.events[3] + ' trust')
+        ax5.title.set_text(Environment_data.events[4] + ' trust')
+        ax6.title.set_text(Environment_data.events[5] + ' trust')
+
+        ax1.set(xlabel='Epochs', ylabel='Trust')
+        ax2.set(xlabel='Epochs', ylabel='Trust')
+        ax3.set(xlabel='Epochs', ylabel='Trust')
+        ax4.set(xlabel='Epochs', ylabel='Trust')
+        ax5.set(xlabel='Epochs', ylabel='Trust')
+        ax6.set(xlabel='Epochs', ylabel='Trust')
+
+        ax1.set_ylim([-0.15, 1.15])
+        ax2.set_ylim([-0.15, 1.15])
+        ax3.set_ylim([-0.15, 1.15])
+        ax4.set_ylim([-0.15, 1.15])
+        ax5.set_ylim([-0.15, 1.15])
+        ax6.set_ylim([-0.15, 1.15])
+
+        ax1.plot(trust_list[0][0], 'y', label='agent_1')
+        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        ax2.plot(trust_list[1][1], 'm', label='agent_2')
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        ax3.plot(trust_list[1][2], 'm', label='agent_2')
+        ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        ax4.plot(trust_list[0][3], 'y', label='agent_1')
+        ax4.plot(trust_list[1][3], 'm', label='agent_2')
+        ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        ax5.plot(trust_list[0][4], 'y', label='agent_1')
+        ax5.plot(trust_list[1][4], 'm', label='agent_2')
+        ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        ax6.plot(trust_list[0][5], 'y', label='agent_1')
+        ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+
+        plt.ylim(-0.15, 1.15)
+        fig.tight_layout(pad=0.75)
+        plt.show()
+
     def render(
         self,
     ):
@@ -472,11 +528,24 @@ class GridWorldEnv(gym.Env):
         agent_target_img = pygame.transform.scale(
             pygame.image.load(Environment_data.agent_target_path), (pix_square_size, pix_square_size)
         )
-        closed_door_img = pygame.transform.scale(
-            pygame.image.load(Environment_data.closed_door_path), (pix_square_size, pix_square_size)
+
+        closed_door_1_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.closed_door_1_path), (pix_square_size, pix_square_size)
         )
-        open_door_img = pygame.transform.scale(
-            pygame.image.load(Environment_data.open_door_path), (pix_square_size, pix_square_size)
+        open_door_1_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.open_door_1_path), (pix_square_size, pix_square_size)
+        )
+        closed_door_2_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.closed_door_2_path), (pix_square_size, pix_square_size)
+        )
+        open_door_2_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.open_door_2_path), (pix_square_size, pix_square_size)
+        )
+        closed_door_3_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.closed_door_3_path), (pix_square_size, pix_square_size)
+        )
+        open_door_3_img = pygame.transform.scale(
+            pygame.image.load(Environment_data.open_door_3_path), (pix_square_size, pix_square_size)
         )
 
         # Draw the target
@@ -527,26 +596,65 @@ class GridWorldEnv(gym.Env):
                     )
                 )
 
-        for door_idx, door in enumerate(self._pocket_doors_location):
+        # draw pocket door 1
+        if self._pocket_doors_flag[0] == 1:
+            # Draw the closed doors
+            canvas.blit(
+                closed_door_1_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[0],
+                    (pix_square_size, pix_square_size),
+                )
+            )
+        else:
+            # Draw the open doors
+            canvas.blit(
+                open_door_1_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[0],
+                    (pix_square_size, pix_square_size),
+                )
+            )
 
-            if self._pocket_doors_flag[door_idx] == 1:
-                # Draw the closed doors
-                canvas.blit(
-                    closed_door_img,
-                    pygame.Rect(
-                        pix_square_size * door,
-                        (pix_square_size, pix_square_size),
-                    )
+        # draw pocket door 2
+        if self._pocket_doors_flag[1] == 1:
+            # Draw the closed doors
+            canvas.blit(
+                closed_door_2_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[1],
+                    (pix_square_size, pix_square_size),
                 )
-            else:
-                # Draw the open doors
-                canvas.blit(
-                    open_door_img,
-                    pygame.Rect(
-                        pix_square_size * door,
-                        (pix_square_size, pix_square_size),
-                    )
+            )
+        else:
+            # Draw the open doors
+            canvas.blit(
+                open_door_2_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[1],
+                    (pix_square_size, pix_square_size),
                 )
+            )
+
+        # draw pocket door 3
+        if self._pocket_doors_flag[2] == 1:
+            # Draw the closed doors
+            canvas.blit(
+                closed_door_3_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[2],
+                    (pix_square_size, pix_square_size),
+                )
+            )
+        else:
+            # Draw the open doors
+            canvas.blit(
+                open_door_3_img,
+                pygame.Rect(
+                    pix_square_size * self._pocket_doors_location[2],
+                    (pix_square_size, pix_square_size),
+                )
+            )
 
         # Now we draw the agents
         for agent in self.agents:

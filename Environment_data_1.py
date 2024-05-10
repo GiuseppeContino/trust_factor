@@ -28,6 +28,9 @@ events = ['door_1', 'door_2', 'door_3', 'red', 'blue', 'target_1']
 agent_1_events = ['door_1', 'red', 'blue', 'target_1',]
 agent_2_events = ['door_2', 'red', 'door_3', 'blue',]
 
+agent_1_end = 'target_1'
+agent_2_end = 'blue'
+
 # rewards
 complete_reward = 1.0
 subtask_reward = 1.0
@@ -123,8 +126,13 @@ agent_one_path = path.join(path.dirname(__file__), 'images/agent_one.png')
 agent_two_path = path.join(path.dirname(__file__), 'images/agent_two.png')
 agent_three_path = path.join(path.dirname(__file__), 'images/agent_three.png')
 agent_target_path = path.join(path.dirname(__file__), 'images/agent_target.png')
-open_door_path = path.join(path.dirname(__file__), 'images/open_door.png')
-closed_door_path = path.join(path.dirname(__file__), 'images/closed_door.png')
+
+open_door_1_path = path.join(path.dirname(__file__), 'images/open_door_1.png')
+closed_door_1_path = path.join(path.dirname(__file__), 'images/closed_door_1.png')
+open_door_2_path = path.join(path.dirname(__file__), 'images/open_door_2.png')
+closed_door_2_path = path.join(path.dirname(__file__), 'images/closed_door_2.png')
+open_door_3_path = path.join(path.dirname(__file__), 'images/open_door_3.png')
+closed_door_3_path = path.join(path.dirname(__file__), 'images/closed_door_3.png')
 
 buttons_img_paths = [red_button, blue_button]
 

@@ -3,28 +3,53 @@ import tqdm
 
 import Trust
 import Episodes_loop
-import Environment_data
 
 from matplotlib import pyplot as plt
 import numpy as np
 from gymnasium.envs.registration import register
 
-epochs = 1500
+epochs = 400
 max_episode_steps = 600
 test_num = 1
+
+# env_str = 'Environment_1'
+# env_str = 'Environment_2'
+env_str = 'Environment_3'
+
+match env_str:
+    case 'Environment_1':
+        import Environment_data_1 as Environment_data
+        end_events = [
+            Environment_data.agent_1_end,
+            Environment_data.agent_2_end,
+        ]
+    case 'Environment_2':
+        import Environment_data_2 as Environment_data
+        end_events = [
+            Environment_data.agent_1_end,
+            Environment_data.agent_2_end,
+        ]
+    case 'Environment_3':
+        import Environment_data_3 as Environment_data
+        end_events = [
+            Environment_data.agent_1_end,
+            Environment_data.agent_2_end,
+            Environment_data.agent_3_end,
+        ]
 
 # Register the environment
 register(
     id='GridWorld-v0',
-    entry_point='Environment:GridWorldEnv',
+    entry_point=env_str+':GridWorldEnv',
     max_episode_steps=max_episode_steps,
 )
 
 events_dict = {elem: idx for idx, elem in enumerate(Environment_data.events)}
+# print(events_dict)
 
 q_tables = np.zeros((
     len(Environment_data.agents),
-    8,  # # of states of the RM
+    10,  # # of states of the RM
     len(events_dict),
     Environment_data.size * Environment_data.size,
     len(Environment_data.actions),
@@ -93,6 +118,7 @@ for epoch in tqdm.tqdm(range(epochs)):
             valid_env,
             max_episode_steps,
             q_tables,
+            end_events,
         )
         steps_list.append(epoch_step)
 
@@ -102,65 +128,7 @@ plt.xlabel('Epochs')
 plt.ylabel('# of steps')
 plt.show()
 
-fig = plt.figure(figsize=(12, 8))
-
-fig.legend(loc='upper right')
-
-ax1 = fig.add_subplot(231)
-ax2 = fig.add_subplot(232)
-ax3 = fig.add_subplot(233)
-ax4 = fig.add_subplot(234)
-ax5 = fig.add_subplot(235)
-ax6 = fig.add_subplot(236)
-
-ax1.title.set_text((Environment_data.events + ['target_1'])[0] + ' trust')
-ax2.title.set_text((Environment_data.events + ['target_1'])[1] + ' trust')
-ax3.title.set_text((Environment_data.events + ['target_1'])[2] + ' trust')
-ax4.title.set_text((Environment_data.events + ['target_1'])[3] + ' trust')
-ax5.title.set_text((Environment_data.events + ['target_1'])[4] + ' trust')
-ax6.title.set_text((Environment_data.events + ['target_1'])[5] + ' trust')
-
-ax1.set(xlabel='Epochs', ylabel='Trust')
-ax2.set(xlabel='Epochs', ylabel='Trust')
-ax3.set(xlabel='Epochs', ylabel='Trust')
-ax4.set(xlabel='Epochs', ylabel='Trust')
-ax5.set(xlabel='Epochs', ylabel='Trust')
-ax6.set(xlabel='Epochs', ylabel='Trust')
-
-ax1.set_ylim([-0.15, 1.15])
-ax2.set_ylim([-0.15, 1.15])
-ax3.set_ylim([-0.15, 1.15])
-ax4.set_ylim([-0.15, 1.15])
-ax5.set_ylim([-0.15, 1.15])
-ax6.set_ylim([-0.15, 1.15])
-
-ax1.plot(trust_lists[0][0], 'y', label='agent_1')
-# ax1.plot(trust_lists[1][0], 'm', label='agent_2')
-ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-# ax2.plot(trust_lists[0][1], 'y', label='agent_1')
-ax2.plot(trust_lists[1][1], 'm', label='agent_2')
-ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-# ax3.plot(trust_lists[0][2], 'y', label='agent_1')
-ax3.plot(trust_lists[1][2], 'm', label='agent_2')
-ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-ax4.plot(trust_lists[0][3], 'y', label='agent_1')
-ax4.plot(trust_lists[1][3], 'm', label='agent_2')
-ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-ax5.plot(trust_lists[0][4], 'y', label='agent_1')
-ax5.plot(trust_lists[1][4], 'm', label='agent_2')
-ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-ax6.plot(trust_lists[0][5], 'y', label='agent_1')
-# ax6.plot(trust_lists[1][5], 'm', label='agent_2')
-ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-
-plt.ylim(-0.15, 1.15)
-fig.tight_layout(pad=0.75)
-plt.show()
+train_env.plot_trust(trust_lists)
 
 # show the result (pass to a not trainer environment and to a full greedy policy)
 # set the value for show after the training without the trust
@@ -173,6 +141,7 @@ for step in tqdm.tqdm(range(max_episode_steps)):
         show_env,
         obs,
         q_tables,
+        end_events,
     )
 
     train_wrapper.update_agents_states(show_env)
