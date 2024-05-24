@@ -259,11 +259,11 @@ class GridWorldEnv(gym.Env):
 
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
 
         return False
 
@@ -283,14 +283,14 @@ class GridWorldEnv(gym.Env):
                 self.event.append(pocket_door_event)
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 if self.training:
-                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                    self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
 
             return False
 
@@ -309,7 +309,7 @@ class GridWorldEnv(gym.Env):
                     self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
             elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == target_event:
                 if self.training:
-                    self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
+                    self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
             return True
 
         return False

@@ -6,15 +6,16 @@ import Episodes_loop
 
 from matplotlib import pyplot as plt
 import numpy as np
+import statsmodels.api as sm
 from gymnasium.envs.registration import register
 
-epochs = 400
+epochs = 1500
 max_episode_steps = 600
 test_num = 1
 
-# env_str = 'Environment_1'
+env_str = 'Environment_1'
 # env_str = 'Environment_2'
-env_str = 'Environment_3'
+# env_str = 'Environment_3'
 
 match env_str:
     case 'Environment_1':
@@ -123,9 +124,17 @@ for epoch in tqdm.tqdm(range(epochs)):
         steps_list.append(epoch_step)
 
 # plot the # of step during evaluation
+fontsize = 16
+y_lowess = sm.nonparametric.lowess(steps_list, range(len(steps_list)), frac=0.1)  # 30 % lowess smoothing
+plt.plot(y_lowess[:, 0], y_lowess[:, 1])
+plt.xlabel('Epochs', fontsize=fontsize)
+plt.ylabel('# of steps', fontsize=fontsize)
+plt.show()
+
 plt.plot(steps_list)
-plt.xlabel('Epochs')
-plt.ylabel('# of steps')
+plt.plot(y_lowess[:, 0], y_lowess[:, 1])
+plt.xlabel('Epochs', fontsize=fontsize)
+plt.ylabel('# of steps', fontsize=fontsize)
 plt.show()
 
 train_env.plot_trust(trust_lists)

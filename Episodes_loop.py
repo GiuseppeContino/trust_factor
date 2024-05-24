@@ -8,10 +8,9 @@ epsilon = 0.4
 
 learning_rate = 0.7
 gamma = 0.9
-alpha = 0.9
 
 train_transition = 0.99  # high valuer means less environment transitions
-dummy_value = 1.0  # 0.98  # 1.0 or greater if you don't want dummy event
+dummy_value = 0.99  # 0.98  # 1.0 or greater if you don't want dummy event
 
 
 class Training:
@@ -31,7 +30,6 @@ class Training:
         self.lr = learning_rate
         self.epsilon = epsilon
         self.gamma = gamma
-        self.alpha = alpha
 
     def env_step(
         self,

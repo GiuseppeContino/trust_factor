@@ -50,7 +50,7 @@
 <text text-anchor="middle" x="112.19" y="-371.57" font-family="Times New Roman,serif" font-size="14.00">3</text>
 </g>
 <!-- 1&#45;&gt;3 -->
-<g id="edge7" class="edge">
+<g id="edge2" class="edge">
 <title>1&#45;&gt;3</title>
 <path fill="none" stroke="black" d="M77.48,-447.22C83.55,-435.12 91.91,-418.45 98.9,-404.5"/>
 <polygon fill="black" stroke="black" points="101.89,-406.34 103.25,-395.84 95.63,-403.21 101.89,-406.34"/>
@@ -63,14 +63,14 @@
 <text text-anchor="middle" x="60.19" y="-196.07" font-family="Times New Roman,serif" font-size="14.00">4</text>
 </g>
 <!-- 2&#45;&gt;4 -->
-<g id="edge8" class="edge">
+<g id="edge4" class="edge">
 <title>2&#45;&gt;4</title>
 <path fill="none" stroke="black" d="M60.19,-270.9C60.19,-259.51 60.19,-244.34 60.19,-231.18"/>
 <polygon fill="black" stroke="black" points="63.69,-231.34 60.19,-221.34 56.69,-231.34 63.69,-231.34"/>
 <text text-anchor="middle" x="80.81" y="-239.95" font-family="Times New Roman,serif" font-size="14.00">door_4</text>
 </g>
 <!-- 3&#45;&gt;2 -->
-<g id="edge5" class="edge">
+<g id="edge8" class="edge">
 <title>3&#45;&gt;2</title>
 <path fill="none" stroke="black" d="M102.41,-359.87C94.93,-347.53 84.46,-330.28 75.83,-316.03"/>
 <polygon fill="black" stroke="black" points="78.89,-314.34 70.71,-307.6 72.9,-317.97 78.89,-314.34"/>
@@ -97,7 +97,7 @@
 <text text-anchor="middle" x="87.19" y="-16.57" font-family="Times New Roman,serif" font-size="14.00">6</text>
 </g>
 <!-- 4&#45;&gt;6 -->
-<g id="edge2" class="edge">
+<g id="edge7" class="edge">
 <title>4&#45;&gt;6</title>
 <path fill="none" stroke="black" d="M80.86,-189.7C89.78,-183.84 99.27,-175.7 104.19,-165.5 124.17,-124.07 113.58,-107.03 104.19,-62 103.53,-58.81 102.59,-55.57 101.49,-52.38"/>
 <polygon fill="black" stroke="black" points="104.83,-51.31 97.86,-43.33 98.33,-53.91 104.83,-51.31"/>
@@ -111,7 +111,7 @@
 <text text-anchor="middle" x="81.69" y="-64.45" font-family="Times New Roman,serif" font-size="14.00">target_3</text>
 </g>
 <!-- 6&#45;&gt;6 -->
-<g id="edge4" class="edge">
+<g id="edge5" class="edge">
 <title>6&#45;&gt;6</title>
 <path fill="none" stroke="black" d="M107.77,-30.71C118.03,-31.92 127.19,-29.01 127.19,-22 127.19,-17.84 123.96,-15.12 119.19,-13.85"/>
 <polygon fill="black" stroke="black" points="119.44,-10.36 109.28,-13.36 119.1,-17.35 119.44,-10.36"/>

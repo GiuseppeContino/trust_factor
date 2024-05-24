@@ -14,9 +14,9 @@ agents_initial_location = [
     np.array((5, 0)),
 ]
 
-# agents_prob = [1, 0.5]
-# agents_prob = [0.5, 1]
-agents_prob = [0.5, 1]
+# agents_prob = [1, 1]
+agents_prob = [1, 0.4]
+# agents_prob = [1, 0.05]
 
 # actions names
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door',]
@@ -64,12 +64,16 @@ walls = (
     ((6, 7), (7, 7)),
     ((6, 8), (7, 8)),
     ((6, 9), (7, 9)),
+    # first horizontal wall
+    ((3, 5), (3, 6)),
+    ((5, 5), (5, 6)),
+    ((6, 5), (6, 6)),
 )
 
 # Doors and relative button location
 doors_location = [
-    [np.array((3, 5)), np.array((4, 5)), np.array((5, 5)), np.array((6, 5))],
-    [np.array((3, 6)), np.array((4, 6)), np.array((5, 6)), np.array((6, 6))],
+    [np.array((4, 5)),],
+    [np.array((4, 6)),],
 ]
 doors_button = [
     [np.array((1, 9)),],
@@ -95,14 +99,15 @@ initial_doors_flag = np.ones((len(doors_location)))
 initial_pocket_doors_flag = np.ones((len(pocket_doors_opener_position)))
 
 # Image for better drawing
-red_door = path.join(path.dirname(__file__), 'images/red_door.png')
-blue_door = path.join(path.dirname(__file__), 'images/blue_door.png')
+red_door = path.join(path.dirname(__file__), 'images/red_door_1.png')
+blue_door = path.join(path.dirname(__file__), 'images/blue_door_1.png')
 
 doors_img_paths = [red_door, blue_door]
 
 # images paths
 red_button = path.join(path.dirname(__file__), 'images/red_button.png')
 blue_button = path.join(path.dirname(__file__), 'images/blue_button.png')
+
 agent_def_path = path.join(path.dirname(__file__), 'images/agent_def.png')
 agent_red_path = path.join(path.dirname(__file__), 'images/agent_red.png')
 agent_blue_path = path.join(path.dirname(__file__), 'images/agent_blue.png')

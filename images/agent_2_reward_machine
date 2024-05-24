@@ -7,19 +7,21 @@ digraph {
 	4
 	5
 	6
-	7
-	8 [shape=doublecircle]
+	7 [shape=doublecircle]
 	fake -> 1 [style=bold]
-	6 -> 7 [label="green & ~target_2"]
-	5 -> 6 [label="door_4 & ~target_2"]
+	1 -> 2 [label="door_2 & ~blue & ~red"]
+	3 -> 6 [label="door_3 & ~blue"]
+	6 -> 7 [label=blue]
+	6 -> 5 [label="door_2 & ~blue"]
+	4 -> 7 [label=blue]
+	1 -> 7 [label=blue]
+	4 -> 5 [label="door_3 & ~blue"]
+	5 -> 7 [label=blue]
+	2 -> 7 [label=blue]
+	3 -> 4 [label="door_2 & ~blue"]
+	7 -> 7 [label=red]
 	1 -> 3 [label="red & ~door_2"]
-	3 -> 4 [label=door_2]
-	1 -> 4 [label="door_2 & red"]
 	2 -> 4 [label=red]
-	6 -> 8 [label=target_2]
-	7 -> 8 [label=target_2]
-	8 -> 8 [label="door_4 | green | target_2"]
-	4 -> 5 [label=blue]
-	1 -> 2 [label="door_2 & ~red"]
-	5 -> 8 [label=target_2]
+	1 -> 4 [label="door_2 & red"]
+	3 -> 7 [label=blue]
 }

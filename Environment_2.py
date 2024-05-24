@@ -168,6 +168,7 @@ class GridWorldEnv(gym.Env):
                 agent.select_new_random_task(self.next_event)
             else:
                 agent.select_new_trusted_task(self.tasks_trust.get_agent_trust(agent_idx), self.next_event)
+                # agent.select_new_random_task(self.next_event)
 
         # Reset agents position
         self.agents[0].position = Environment_data.agents_initial_location[0]
@@ -252,11 +253,11 @@ class GridWorldEnv(gym.Env):
 
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, door_event, 1.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, door_event, 0.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
 
         return False
 
@@ -276,14 +277,15 @@ class GridWorldEnv(gym.Env):
                 self.event.append(pocket_door_event)
                 if self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 1.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 1.0)
                     return True
                 elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == pocket_door_event:
                     if self.training:
-                        self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                        self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
             elif self.tasks_trust and self.agents[agent_idx].get_selected_task() == pocket_door_event:
                 if self.training:
-                    self.tasks_trust.update_trust(agent_idx, pocket_door_event, 0.0)
+                    self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
+                return True
 
             return False
 
@@ -299,11 +301,11 @@ class GridWorldEnv(gym.Env):
             self.event.append(target_event)
             if self.tasks_trust and self.agents[agent_idx].get_selected_task() == target_event:
                 if self.training:
-                    self.tasks_trust.update_trust(agent_idx, target_event, 1.0)
+                    self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 1.0)
                 return True
             elif self.tasks_trust and not self.agents[agent_idx].get_selected_task() == target_event:
                 if self.training:
-                    self.tasks_trust.update_trust(agent_idx, target_event, 0.0)
+                    self.tasks_trust.update_trust(agent_idx, self.agents[agent_idx].get_selected_task(), 0.0)
 
         return False
 
@@ -424,30 +426,30 @@ class GridWorldEnv(gym.Env):
 
     def plot_trust(self, trust_list):
 
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(8, 8))
 
         fig.legend(loc='upper right')
 
-        ax1 = fig.add_subplot(2, 3, 1)
-        ax2 = fig.add_subplot(2, 3, 2)
-        ax3 = fig.add_subplot(2, 3, 3)
-        ax4 = fig.add_subplot(2, 3, 4)
-        ax5 = fig.add_subplot(2, 3, 5)
-        ax6 = fig.add_subplot(2, 3, 6)
+        ax1 = fig.add_subplot(3, 2, 1)
+        ax2 = fig.add_subplot(3, 2, 2)
+        ax3 = fig.add_subplot(3, 2, 3)
+        ax4 = fig.add_subplot(3, 2, 4)
+        ax5 = fig.add_subplot(3, 2, 5)
+        ax6 = fig.add_subplot(3, 2, 6)
 
-        ax1.title.set_text(Environment_data.events[0] + ' trust')
-        ax2.title.set_text(Environment_data.events[1] + ' trust')
-        ax3.title.set_text(Environment_data.events[2] + ' trust')
-        ax4.title.set_text(Environment_data.events[3] + ' trust')
-        ax5.title.set_text(Environment_data.events[4] + ' trust')
-        ax6.title.set_text(Environment_data.events[5] + ' trust')
+        ax1.title.set_text(Environment_data.events[0] + ' CTF')
+        ax2.title.set_text(Environment_data.events[1] + ' CTF')
+        ax3.title.set_text(Environment_data.events[2] + ' CTF')
+        ax4.title.set_text(Environment_data.events[3] + ' CTF')
+        ax5.title.set_text(Environment_data.events[4] + ' CTF')
+        ax6.title.set_text(Environment_data.events[5] + ' CTF')
 
-        ax1.set(xlabel='Epochs', ylabel='Trust')
-        ax2.set(xlabel='Epochs', ylabel='Trust')
-        ax3.set(xlabel='Epochs', ylabel='Trust')
-        ax4.set(xlabel='Epochs', ylabel='Trust')
-        ax5.set(xlabel='Epochs', ylabel='Trust')
-        ax6.set(xlabel='Epochs', ylabel='Trust')
+        ax1.set(xlabel='Epochs', ylabel='CTF')
+        ax2.set(xlabel='Epochs', ylabel='CTF')
+        ax3.set(xlabel='Epochs', ylabel='CTF')
+        ax4.set(xlabel='Epochs', ylabel='CTF')
+        ax5.set(xlabel='Epochs', ylabel='CTF')
+        ax6.set(xlabel='Epochs', ylabel='CTF')
 
         ax1.set_ylim([-0.15, 1.15])
         ax2.set_ylim([-0.15, 1.15])
@@ -456,26 +458,26 @@ class GridWorldEnv(gym.Env):
         ax5.set_ylim([-0.15, 1.15])
         ax6.set_ylim([-0.15, 1.15])
 
-        ax1.plot(trust_list[0][0], 'y', label='agent_1')
-        ax1.plot(trust_list[1][0], 'm', label='agent_2')
+        ax1.plot(trust_list[0][0], 'yellowgreen', label='agent_1')
+        ax1.plot(trust_list[1][0], 'orange', label='agent_2')
         ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax2.plot(trust_list[0][1], 'y', label='agent_1')
-        ax2.plot(trust_list[1][1], 'm', label='agent_2')
+        ax2.plot(trust_list[0][1], 'yellowgreen', label='agent_1')
+        ax2.plot(trust_list[1][1], 'orange', label='agent_2')
         ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax3.plot(trust_list[0][2], 'y', label='agent_1')
-        ax3.plot(trust_list[1][2], 'm', label='agent_2')
+        ax3.plot(trust_list[0][2], 'yellowgreen', label='agent_1')
+        ax3.plot(trust_list[1][2], 'orange', label='agent_2')
         ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax4.plot(trust_list[0][3], 'y', label='agent_1')
-        ax4.plot(trust_list[1][3], 'm', label='agent_2')
+        ax4.plot(trust_list[0][3], 'yellowgreen', label='agent_1')
+        ax4.plot(trust_list[1][3], 'orange', label='agent_2')
         ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax5.plot(trust_list[0][4], 'y', label='agent_1')
+        ax5.plot(trust_list[0][4], 'yellowgreen', label='agent_1')
         ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax6.plot(trust_list[1][5], 'm', label='agent_2')
+        ax6.plot(trust_list[1][5], 'orange', label='agent_2')
         ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
         plt.ylim(-0.15, 1.15)

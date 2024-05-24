@@ -68,22 +68,28 @@ walls = (
     ((3, 3), (3, 4)),
     ((4, 3), (4, 4)),
     ((5, 3), (5, 4)),
+    ((6, 3), (6, 4)),
+    ((8, 3), (8, 4)),
+    ((9, 3), (9, 4)),
     # Second horizontal wall
     ((6, 5), (6, 6)),
     ((8, 5), (8, 6)),
     ((9, 5), (9, 6)),
     # third horizontal wall
-    ((0, 8), (0, 9)),
-    ((1, 8), (1, 9)),
+    ((3, 6), (3, 7)),
+    ((5, 6), (5, 7)),
     # forth horizontal wall
     ((1, 7), (1, 8)),
     ((2, 7), (2, 8)),
+    # fifth horizontal wall
+    ((0, 8), (0, 9)),
+    ((1, 8), (1, 9)),
 )
 
 # Doors and relative button location
 doors_location = [
-    [np.array((6, 4)), np.array((7, 4)), np.array((8, 4)), np.array((9, 4))],
-    [np.array((3, 7)), np.array((4, 7)), np.array((5, 7))],
+    [np.array((7, 4))],
+    [np.array((4, 7))],
 ]
 doors_button = [
     [np.array((5, 4))],
@@ -111,14 +117,15 @@ initial_doors_flag = np.ones((len(doors_location)))
 initial_pocket_doors_flag = np.ones((len(pocket_doors_opener_position)))
 
 # Image for better drawing
-red_door = path.join(path.dirname(__file__), 'images/red_door.png')
-blue_door = path.join(path.dirname(__file__), 'images/blue_door.png')
+red_door = path.join(path.dirname(__file__), 'images/red_door_1.png')
+blue_door = path.join(path.dirname(__file__), 'images/blue_door_1.png')
 
 doors_img_paths = [red_door, blue_door]
 
 # images paths
 red_button = path.join(path.dirname(__file__), 'images/red_button.png')
 blue_button = path.join(path.dirname(__file__), 'images/blue_button.png')
+
 agent_def_path = path.join(path.dirname(__file__), 'images/agent_def.png')
 agent_red_path = path.join(path.dirname(__file__), 'images/agent_red.png')
 agent_blue_path = path.join(path.dirname(__file__), 'images/agent_blue.png')
@@ -153,13 +160,16 @@ def create_first_individual_rm():
 
     automaton.add_transition((state_0, 'door_1', state_1))
 
-    automaton.add_transition((state_1, 'red & ~ blue', state_2))
-    automaton.add_transition((state_1, 'blue & ~ red', state_3))
-    automaton.add_transition((state_1, 'red & blue', state_4))
+    # automaton.add_transition((state_1, 'red & ~ blue', state_2))
+    # automaton.add_transition((state_1, 'blue & ~ red', state_3))
+    # automaton.add_transition((state_1, 'red & blue', state_4))
+
+    automaton.add_transition((state_1, 'red', state_2))
+    automaton.add_transition((state_1, 'blue', state_3))
 
     automaton.add_transition((state_2, 'blue', state_4))
 
-    automaton.add_transition((state_3, 'red & ~ target_1', state_4))
+    automaton.add_transition((state_3, 'red', state_4))
     automaton.add_transition((state_3, 'target_1', state_5))
 
     automaton.add_transition((state_4, 'target_1', state_5))
@@ -177,29 +187,31 @@ def create_second_individual_rm():
     state_3 = automaton.create_state()
     state_4 = automaton.create_state()
     state_5 = automaton.create_state()
+    state_6 = automaton.create_state()
 
     automaton.set_initial_state(state_0)
-    automaton.set_accepting_state(state_5, True)
+    automaton.set_accepting_state(state_6, True)
 
     automaton.add_transition((state_0, 'door_2 & ~ red & ~ blue', state_1))
-    automaton.add_transition((state_0, 'red & ~ door_2 & ~ blue', state_2))
-    automaton.add_transition((state_0, 'door_2 & red & ~ blue', state_3))
+    automaton.add_transition((state_0, 'red & ~ door_2', state_2))
+    automaton.add_transition((state_0, 'door_2 & red', state_3))
 
-    automaton.add_transition((state_1, 'red & ~ blue', state_3))
+    automaton.add_transition((state_1, 'red', state_3))
 
     automaton.add_transition((state_2, 'door_2 & ~ blue', state_3))
-    automaton.add_transition((state_2, 'door_3 & ~ blue', state_4))
+    automaton.add_transition((state_2, 'door_3 & ~ blue', state_5))
 
     automaton.add_transition((state_3, 'door_3 & ~ blue', state_4))
 
-    automaton.add_transition((state_4, 'door_2 & ~ blue', state_4))
+    automaton.add_transition((state_5, 'door_2 & ~ blue', state_4))
 
-    automaton.add_transition((state_0, 'blue', state_5))
-    automaton.add_transition((state_1, 'blue', state_5))
-    automaton.add_transition((state_2, 'blue', state_5))
-    automaton.add_transition((state_3, 'blue', state_5))
-    automaton.add_transition((state_4, 'blue', state_5))
+    automaton.add_transition((state_0, 'blue', state_6))
+    automaton.add_transition((state_1, 'blue', state_6))
+    automaton.add_transition((state_2, 'blue', state_6))
+    automaton.add_transition((state_3, 'blue', state_6))
+    automaton.add_transition((state_4, 'blue', state_6))
+    automaton.add_transition((state_5, 'blue', state_6))
 
-    automaton.add_transition((state_5, 'red', state_5))
+    automaton.add_transition((state_6, 'red', state_6))
 
     return automaton
