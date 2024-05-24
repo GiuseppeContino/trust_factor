@@ -50,14 +50,11 @@ class Agent:
             set(event) & set(self.events)
         )
         if not common_events == []:
-            # print(self.state)
-            # print(event)
-            # print(self.events)
             self.temporal_goal.step(common_events)
             self.state = self.temporal_goal.current_state - 1
             if training:
                 self.select_new_random_task(next_tasks)
-            else:
+            elif self.dict_state_to_event[self.selected_task] in common_events:
                 self.select_new_trusted_task(tasks_trust, next_tasks)
 
     def reset_temporal_goal(
