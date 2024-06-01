@@ -61,12 +61,21 @@ trust = Trust.Trust(
     events_dict,
 )
 
+arc_values = np.ones((
+    len(Environment_data.agents),
+    10,
+    len(events_dict),
+)) * 100
+
+arc_waiting = np.ones_like(arc_values) * 100
+
 train_env = gym.make(
     id='GridWorld-v0',
     # render_mode='human',
     training=True,
     train_transition=Episodes_loop.train_transition,
     tasks_trust=trust,
+    tasks_value=arc_values,
     dict_event_to_state=events_dict,
 )
 
@@ -74,6 +83,7 @@ valid_env = gym.make(
     id='GridWorld-v0',
     # render_mode='human',
     tasks_trust=trust,
+    tasks_value=arc_values,
     dict_event_to_state=events_dict,
 )
 
@@ -81,6 +91,7 @@ show_env = gym.make(
     id='GridWorld-v0',
     render_mode='human',
     tasks_trust=trust,
+    tasks_value=arc_values,
     dict_event_to_state=events_dict,
 )
 
@@ -107,6 +118,8 @@ for epoch in tqdm.tqdm(range(epochs)):
         train_env,
         max_episode_steps,
         q_tables,
+        arc_values,
+        arc_waiting,
     )
 
     for agent_idx in range(len(Environment_data.agents)):
@@ -120,8 +133,20 @@ for epoch in tqdm.tqdm(range(epochs)):
             max_episode_steps,
             q_tables,
             end_events,
+            arc_values,
+            arc_waiting,
         )
         steps_list.append(epoch_step)
+
+# print(arc_values)
+# print(arc_waiting)
+
+for i, arc_value in enumerate(arc_values):
+    for ii, elems in enumerate(arc_value):
+        for iii, elem in enumerate(elems):
+            if elem > arc_waiting[i][ii][iii]:
+                arc_value[ii][iii] -= arc_waiting[i][ii][iii]
+print(arc_values)
 
 # plot the # of step during evaluation
 fontsize = 16
@@ -144,7 +169,7 @@ train_env.plot_trust(trust_lists)
 obs, _ = show_env.reset()
 
 # start the steps loop
-for step in tqdm.tqdm(range(max_episode_steps)):
+for step in range(max_episode_steps):
 
     obs, rew, term, _ = train_wrapper.env_step(
         show_env,
@@ -153,7 +178,10 @@ for step in tqdm.tqdm(range(max_episode_steps)):
         end_events,
     )
 
-    train_wrapper.update_agents_states(show_env)
+    print('agent_1:', show_env.agents[0].get_selected_task(), '  -  agent_2:', show_env.agents[1].get_selected_task())
+
+    train_wrapper.update_agents_states(show_env, arc_values)
 
     if np.all(list(term.values())):
+        print('end in # ', step + 1)
         break

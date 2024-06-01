@@ -13,6 +13,7 @@ class Agent:
         dict_event_to_state,
         training,
         tasks_trust,
+        tasks_value,
         next_tasks,
     ):
         self.position = position
@@ -26,7 +27,8 @@ class Agent:
         if training:
             self.select_new_random_task(next_tasks)
         else:
-            self.select_new_trusted_task(tasks_trust, next_tasks)
+            # self.select_new_trusted_task(tasks_trust, next_tasks)
+            self.select_new_valued_task(tasks_value, next_tasks)
 
     def get_position(
         self,
@@ -43,6 +45,7 @@ class Agent:
         event,
         training,
         tasks_trust,
+        arc_values,
         next_tasks,
     ):
 
@@ -54,8 +57,9 @@ class Agent:
             self.state = self.temporal_goal.current_state - 1
             if training:
                 self.select_new_random_task(next_tasks)
-            elif self.dict_state_to_event[self.selected_task] in common_events:
-                self.select_new_trusted_task(tasks_trust, next_tasks)
+            else:
+                # self.select_new_trusted_task(tasks_trust, next_tasks)
+                self.select_new_valued_task(arc_values[self.state], next_tasks)
 
     def reset_temporal_goal(
         self,
@@ -86,7 +90,7 @@ class Agent:
 
         atoms = []
         for transition in self.temporal_goal.automaton.get_transitions_from(self.state + 1):
-            for atom in str(sympify(transition[1])).replace(' ', '').split('&'):
+            for atom in str(sympify(transition[1])).replace(' ', '').replace('|', '&').split('&'):
                 if not atom[0] == '~':
                     atoms.append(atom)
         return list(set(atoms) & set(next_tasks))
@@ -108,8 +112,18 @@ class Agent:
         if atoms:
             atoms_state = [self.dict_event_to_state[item] for item in atoms if item in self.dict_event_to_state]
             atoms_trust = {item: trust[item] for item in atoms_state}
-            # TODO: here I hypnotize all trust are different
             self.selected_task = list(atoms_trust.keys())[np.argmax(list(atoms_trust.values()))]
+
+    def select_new_valued_task(
+        self,
+        arc_value,
+        next_event,
+    ):
+        atoms = self.get_selectionable_task(next_event)
+        if atoms:
+            atoms_state = [self.dict_event_to_state[item] for item in atoms if item in self.dict_event_to_state]
+            atoms_values = {item: arc_value[item] for item in atoms_state}
+            self.selected_task = list(atoms_values.keys())[np.argmin(list(atoms_values.values()))]
 
     def set_selected_task(
         self,

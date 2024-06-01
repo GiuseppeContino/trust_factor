@@ -14,22 +14,22 @@ agents_initial_location = [
     np.array((7, 0)),
 ]
 
+# agents_prob = [1, 0]
 # agents_prob = [1, 0.5]
-# agents_prob = [0.5, 1]
 agents_prob = [1, 1]
 
 # actions names
 actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door',]
 
 # events that has to occur for complete the task
-events = ['door_1', 'door_2', 'door_3', 'red', 'blue', 'target_1']
+events = ['door_1', 'door_2', 'door_3', 'red', 'blue_1', 'blue_2', 'target_1',]
 
 # important event for each agent
-agent_1_events = ['door_1', 'red', 'blue', 'target_1',]
-agent_2_events = ['door_2', 'red', 'door_3', 'blue',]
+agent_1_events = ['door_1', 'red', 'blue_1', 'blue_2', 'target_1']
+agent_2_events = ['door_2', 'door_3', 'red', 'blue_1', 'blue_2',]
 
 agent_1_end = 'target_1'
-agent_2_end = 'blue'
+agent_2_end = ['blue_1', 'blue_2']
 
 # rewards
 complete_reward = 1.0
@@ -93,7 +93,7 @@ doors_location = [
 ]
 doors_button = [
     [np.array((5, 4))],
-    [np.array((0, 9)), np.array((6, 9)), ],
+    [np.array((0, 9)), np.array((6, 9)),],
 ]
 
 # Pocket doors and relative opening position
@@ -160,14 +160,10 @@ def create_first_individual_rm():
 
     automaton.add_transition((state_0, 'door_1', state_1))
 
-    # automaton.add_transition((state_1, 'red & ~ blue', state_2))
-    # automaton.add_transition((state_1, 'blue & ~ red', state_3))
-    # automaton.add_transition((state_1, 'red & blue', state_4))
-
     automaton.add_transition((state_1, 'red', state_2))
-    automaton.add_transition((state_1, 'blue', state_3))
+    automaton.add_transition((state_1, 'blue_1', state_3))
 
-    automaton.add_transition((state_2, 'blue', state_4))
+    automaton.add_transition((state_2, 'blue_1 | blue_2', state_4))
 
     automaton.add_transition((state_3, 'red', state_4))
     automaton.add_transition((state_3, 'target_1', state_5))
@@ -192,25 +188,25 @@ def create_second_individual_rm():
     automaton.set_initial_state(state_0)
     automaton.set_accepting_state(state_6, True)
 
-    automaton.add_transition((state_0, 'door_2 & ~ red & ~ blue', state_1))
+    automaton.add_transition((state_0, 'door_2 & ~ red & ~ blue_1', state_1))
     automaton.add_transition((state_0, 'red & ~ door_2', state_2))
     automaton.add_transition((state_0, 'door_2 & red', state_3))
 
     automaton.add_transition((state_1, 'red', state_3))
 
-    automaton.add_transition((state_2, 'door_2 & ~ blue', state_3))
-    automaton.add_transition((state_2, 'door_3 & ~ blue', state_5))
+    automaton.add_transition((state_2, 'door_2 & ~ blue_1', state_3))
+    automaton.add_transition((state_2, 'door_3 & ~ blue_1', state_5))
 
-    automaton.add_transition((state_3, 'door_3 & ~ blue', state_4))
+    automaton.add_transition((state_3, 'door_3 & ~ blue_1', state_4))
 
-    automaton.add_transition((state_5, 'door_2 & ~ blue', state_4))
+    automaton.add_transition((state_5, 'door_2 & ~ blue1', state_4))
 
-    automaton.add_transition((state_0, 'blue', state_6))
-    automaton.add_transition((state_1, 'blue', state_6))
-    automaton.add_transition((state_2, 'blue', state_6))
-    automaton.add_transition((state_3, 'blue', state_6))
-    automaton.add_transition((state_4, 'blue', state_6))
-    automaton.add_transition((state_5, 'blue', state_6))
+    automaton.add_transition((state_0, 'blue_1', state_6))
+    automaton.add_transition((state_1, 'blue_1', state_6))
+    automaton.add_transition((state_2, 'blue_1', state_6))
+    automaton.add_transition((state_3, 'blue_1', state_6))
+    automaton.add_transition((state_4, 'blue_1 | blue_2', state_6))
+    automaton.add_transition((state_5, 'blue_1 | blue_2', state_6))
 
     automaton.add_transition((state_6, 'red', state_6))
 
