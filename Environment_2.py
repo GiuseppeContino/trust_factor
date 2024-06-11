@@ -545,7 +545,7 @@ class GridWorldEnv(gym.Env):
         for target_location in self._targets_location:
             pygame.draw.rect(
                 canvas,
-                (255, 0, 0),
+                (160, 32, 240),
                 pygame.Rect(
                     pix_square_size * target_location,
                     (pix_square_size, pix_square_size),

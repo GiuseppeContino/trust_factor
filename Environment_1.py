@@ -25,21 +25,31 @@ class GridWorldEnv(gym.Env):
         training=False,
         train_transition=0.0,
         tasks_trust=None,
+        tasks_value=None,
         dict_event_to_state=None,
     ):
 
         self.size = Environment_data.size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
         self.events = Environment_data.events
+        self.events_typology = Environment_data.events_typology
         self.training = training
         self.train_transition = train_transition
+
+        if self.training:
+            self.epochs = 0
 
         self.event = []
         self.next_event = copy.copy(Environment_data.events)
 
         self.random_event = False
+        self.event_generator_step = 0
+        self.dict_event_CTF = {}
+        self.dict_event_arc = {}
+        self.atom = []
 
         self.tasks_trust = tasks_trust
+        self.tasks_value = tasks_value
 
         # agents initial position and colors
         agents_location = Environment_data.agents_initial_location
@@ -68,6 +78,7 @@ class GridWorldEnv(gym.Env):
                 dict_event_to_state,
                 training,
                 self.next_event,
+                self.tasks_value,
                 tasks_trust.get_agent_trust(agent_idx),
             ))
 
@@ -161,6 +172,7 @@ class GridWorldEnv(gym.Env):
 
         self.next_event = copy.copy(Environment_data.events)
         self.random_event = False
+        self.event_generator_step = 0
         # TODO: delete pass_events in all environments
 
         for agent_idx, agent in enumerate(self.agents):
@@ -168,7 +180,13 @@ class GridWorldEnv(gym.Env):
             if self.training:
                 agent.select_new_random_task(self.next_event)
             else:
-                agent.select_new_trusted_task(self.tasks_trust.get_agent_trust(agent_idx), self.next_event)
+                agent.select_new_trust_valued_task(
+                    self.tasks_trust.get_agent_trust(agent_idx),
+                    self.tasks_value[agent_idx][self.agents[agent_idx].state],
+                    self.next_event,
+                )
+                # agent.select_new_valued_task(self.tasks_value[agent_idx][self.agents[agent_idx].state], self.next_event)
+                # agent.select_new_trusted_task(self.tasks_trust.get_agent_trust(agent_idx), self.next_event)
                 # agent.select_new_random_task(self.next_event)
 
         # Reset agents position
@@ -314,6 +332,11 @@ class GridWorldEnv(gym.Env):
 
         return False
 
+    def increase_epochs(
+        self,
+    ):
+        self.epochs += 1
+
     def step(
         self,
         actions,
@@ -339,14 +362,11 @@ class GridWorldEnv(gym.Env):
 
                 if (
                         self.open_door(agent_idx, 0, 0, 'red', openers) or
-                        self.open_door(agent_idx, 1, 1, 'blue', openers)
+                        self.open_door(agent_idx, 1, 0, 'blue_1', openers) or
+                        self.open_door(agent_idx, 1, 1, 'blue_2', openers)
                 ):
 
                     reward[agent_idx] = Environment_data.subtask_reward
-
-                if 'red' in self.next_event:
-                    if self.open_door(agent_idx, 1, 0, 'blue', openers):
-                        reward[agent_idx] = Environment_data.subtask_reward
 
             # check for open pocket door
             elif action == 5:
@@ -364,37 +384,83 @@ class GridWorldEnv(gym.Env):
             # check of final position of the agents
             if self.reach_target(agent_idx, 0, 'target_1'):
                 reward[agent_idx] = Environment_data.complete_reward
-            if agent_idx == 1 and action == 4 and np.array_equal(self.agents[1].position, self._doors_button[1][1]):
-                reward[agent_idx] = Environment_data.complete_reward
 
         # generate a fake event during training
-        if self.training and not self.event and self.next_event:
-            agent_idx = -1
+        if self.training:
+
+            self.event_generator_step += 1
+
+            agent_idx = other_agent_idx = -1
             for action_idx, action in enumerate(actions.values()):
                 if not action == 6:
                     agent_idx = action_idx
-            random_uniform = random.uniform(0, 1)
-            if (
-                    random_uniform > self.train_transition and
-                    list(set(self.agents[agent_idx].events) - set(self.next_event))
-            ):
+                else:
+                    other_agent_idx = action_idx
+
+            if not set(self.next_event).isdisjoint(self.agents[other_agent_idx].events):
+
                 temp_state = self.agents[agent_idx].state
                 temp_goal = self.agents[agent_idx].temporal_goal.automaton.get_transitions_from(temp_state + 1)
+
+                other_temp_state = self.agents[other_agent_idx].state
+                other_temp_goal = self.agents[other_agent_idx].temporal_goal.automaton.get_transitions_from(other_temp_state + 1)
+
                 atoms = []
                 for transition in temp_goal:
-                    for atom in str(sympify(transition[1])).replace(' ', '').split('&'):
-                        if not atom[0] == '~' and not atom == 'target_1':
+                    for atom in str(sympify(transition[1])).replace(' ', '').replace('|', '&').split('&'):
+                        if not atom[0] == '~' and atom not in atoms and atom in self.next_event:
                             atoms.append(atom)
+
+                if agent_idx == 0 and 'target_1' in atoms:
+                    atoms.remove('target_1')
+                elif agent_idx == 1 and 'blue_1' in atoms and self.epochs <= 1000:
+                    atoms.remove('blue_1')
+
+                other_atoms = []
+                for transition in other_temp_goal:
+                    for atom in str(sympify(transition[1])).replace(' ', '').replace('|', '&').split('&'):
+                        if not atom[0] == '~' and atom not in other_atoms and atom in self.next_event:
+                            other_atoms.append(atom)
+
+                if other_agent_idx == 1 and 'target_1' in other_atoms:
+                    other_atoms.remove('target_1')
+                elif other_agent_idx == 0 and 'blue_1' in other_atoms and self.epochs <= 1000:
+                    other_atoms.remove('blue_1')
+
+                # self.dict_event_CTF = {self.events[i]: self.tasks_trust.get_agent_trust(other_agent_idx)[i] for i in range(len(self.events))}
+                # self.dict_event_arc = {self.events[i]: self.tasks_value[other_agent_idx][other_temp_state][i] for i in range(len(self.events))}
+                self.dict_event_CTF = {self.events[i]: self.tasks_trust.get_agent_trust(other_agent_idx)[i] for i in
+                                       range(len(self.events_typology))}
+                self.dict_event_arc = {self.events[i]: self.tasks_value[other_agent_idx][other_temp_state][i] for i in
+                                       range(len(self.events_typology))}
+
+                if self.epochs > 1000:
+                    # print(other_atoms, atoms, list(set(atoms) & set(other_atoms)))
+                    atoms = list(set(other_atoms) - set(self.agents[agent_idx].events)) + list(set(atoms) & set(other_atoms))
+
                 if atoms:
-                    self.event = [atoms[random.randint(0, len(atoms) - 1)]]
-                    while self.event[0] not in self.next_event:
+                    if self.epochs > 1000:
+                        min_atom = 600.0
+                        max_atom = 0.0
+                        max_event = ''
+                        for atom in atoms:
+                            if self.dict_event_arc[atom] < min_atom:
+                                max_event = atom
+                                min_atom = self.dict_event_arc[max_event]
+                                max_atom = self.dict_event_CTF[max_event]
+                        # print(agent_idx, max_event, max_atom, self.dict_event_arc[max_event], self.event_generator_step)
+                        if min_atom <= self.event_generator_step and random.uniform(0, 1) < max_atom:
+                            self.event = [max_event]
+                            self.random_event = True
+                            self.event_generator_step = 0
+                    elif random.uniform(0, 1) > self.train_transition:
                         self.event = [atoms[random.randint(0, len(atoms) - 1)]]
-                    self.random_event = True
+                        self.random_event = True
 
         # from the event to the correlated action
         if 'red' in self.event:
             self._doors_flag[0] = 0
-        if 'blue' in self.event:
+        if 'blue_1' in self.event or 'blue_2' in self.event:
             self._doors_flag[1] = 0
         if 'door_1' in self.event:
             self._pocket_doors_flag[0] = 0
@@ -403,27 +469,24 @@ class GridWorldEnv(gym.Env):
         if 'door_3' in self.event:
             self._pocket_doors_flag[2] = 0
 
+        # remove from the next_event the pass event
         if self.event:
-
-            # remove from the next_event the pass event
             for item in self.event:
                 if item in self.next_event:
                     self.next_event.remove(item)
+        if 'blue_1' not in self.next_event and 'blue_2' in self.next_event:
+            self.next_event.remove('blue_2')
+        if 'blue_2' not in self.next_event and 'blue_1' in self.next_event:
+            self.next_event.remove('blue_1')
 
         # compute the reward dict
         reward_dict = {'agent_' + str(key + 1): value for key, value in enumerate(reward)}
 
         # compute the termination dict
-        if not self.training:
-            terminated = [
-                'target_1' in self.event,
-                'target_1' in self.event,
-            ]
-        else:
-            terminated = [
-                'target_1' in self.event,
-                'blue' in self.event,
-            ]
+        terminated = [
+            'target_1' not in self.next_event,
+            'blue_1' not in self.next_event or 'blue_2' not in self.next_event,
+        ]
 
         terminated_dict = {'agent_' + str(key + 1): value for key, value in enumerate(terminated)}
 
@@ -435,7 +498,8 @@ class GridWorldEnv(gym.Env):
 
         return observation, reward_dict, terminated_dict, False, info
 
-    def plot_trust(self, trust_list):
+    @staticmethod
+    def plot_trust(trust_list):
 
         fig = plt.figure(figsize=(8, 8))
         fig.legend(loc='upper right')
@@ -451,8 +515,8 @@ class GridWorldEnv(gym.Env):
         ax2.title.set_text(Environment_data.events[1] + ' CTF')
         ax3.title.set_text(Environment_data.events[2] + ' CTF')
         ax4.title.set_text(Environment_data.events[3] + ' CTF')
-        ax5.title.set_text(Environment_data.events[4] + ' CTF')
-        ax6.title.set_text(Environment_data.events[5] + ' CTF')
+        ax5.title.set_text(Environment_data.events[4][:-2] + ' CTF')
+        ax6.title.set_text(Environment_data.events[6] + ' CTF')
 
         ax1.set(xlabel='Epochs', ylabel='CTF')
         ax2.set(xlabel='Epochs', ylabel='CTF')
@@ -482,10 +546,10 @@ class GridWorldEnv(gym.Env):
         ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
         ax5.plot(trust_list[0][4], 'yellowgreen', label='agent_1')
-        ax5.plot(trust_list[1][4], 'orange', label='agent_2')
+        ax5.plot(trust_list[1][5], 'orange', label='agent_2')
         ax5.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
-        ax6.plot(trust_list[0][5], 'yellowgreen', label='agent_1')
+        ax6.plot(trust_list[0][6], 'yellowgreen', label='agent_1')
         ax6.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3)
 
         plt.ylim(-0.15, 1.15)
@@ -559,7 +623,7 @@ class GridWorldEnv(gym.Env):
         for target_location in self._targets_location:
             pygame.draw.rect(
                 canvas,
-                (255, 0, 0),
+                (160, 32, 240),
                 pygame.Rect(
                     pix_square_size * target_location,
                     (pix_square_size, pix_square_size),
@@ -665,24 +729,24 @@ class GridWorldEnv(gym.Env):
 
         # Now we draw the agents
         for agent in self.agents:
-            if agent.get_state() == 5:
-                agent_img = agent_def_img
-            else:
-                match agent.get_selected_task():
-                    case 'blue':
-                        agent_img = agent_blue_img
-                    case 'red':
-                        agent_img = agent_red_img
-                    case 'door_1':
-                        agent_img = agent_one_img
-                    case 'door_2':
-                        agent_img = agent_two_img
-                    case 'door_3':
-                        agent_img = agent_three_img
-                    case 'target_1':
-                        agent_img = agent_target_img
-                    case _:
-                        agent_img = agent_def_img
+            agent_img = agent_def_img
+            match agent.get_selected_task():
+                case 'blue_1':
+                    agent_img = agent_blue_img
+                case 'blue_2':
+                    agent_img = agent_blue_img
+                case 'red':
+                    agent_img = agent_red_img
+                case 'door_1':
+                    agent_img = agent_one_img
+                case 'door_2':
+                    agent_img = agent_two_img
+                case 'door_3':
+                    agent_img = agent_three_img
+                case 'target_1':
+                    agent_img = agent_target_img
+                case _:
+                    agent_img = agent_def_img
 
             canvas.blit(
                 agent_img,

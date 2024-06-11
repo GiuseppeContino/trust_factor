@@ -1,3 +1,5 @@
+import time
+
 import gymnasium as gym
 import tqdm
 
@@ -56,10 +58,19 @@ q_tables = np.zeros((
     len(Environment_data.actions),
 ))
 
+# trust = Trust.Trust(
+#     len(Environment_data.agents),
+#     events_dict,
+# )
+
+typology_event_dict = {elem: idx for idx, elem in enumerate(Environment_data.events_typology)}
 trust = Trust.Trust(
     len(Environment_data.agents),
-    events_dict,
+    typology_event_dict,
 )
+
+print(typology_event_dict)
+print(trust.agents_trust)
 
 arc_values = np.ones((
     len(Environment_data.agents),
@@ -75,7 +86,7 @@ train_env = gym.make(
     training=True,
     train_transition=Episodes_loop.train_transition,
     tasks_trust=trust,
-    tasks_value=arc_values,
+    tasks_value=arc_values,  # DELETE
     dict_event_to_state=events_dict,
 )
 
@@ -83,7 +94,7 @@ valid_env = gym.make(
     id='GridWorld-v0',
     # render_mode='human',
     tasks_trust=trust,
-    tasks_value=arc_values,
+    tasks_value=arc_values,  # DELETE
     dict_event_to_state=events_dict,
 )
 
@@ -91,7 +102,7 @@ show_env = gym.make(
     id='GridWorld-v0',
     render_mode='human',
     tasks_trust=trust,
-    tasks_value=arc_values,
+    tasks_value=arc_values,  # DELETE
     dict_event_to_state=events_dict,
 )
 
@@ -145,12 +156,13 @@ for i, arc_value in enumerate(arc_values):
     for ii, elems in enumerate(arc_value):
         for iii, elem in enumerate(elems):
             if elem > arc_waiting[i][ii][iii]:
-                arc_value[ii][iii] -= arc_waiting[i][ii][iii]
-print(arc_values)
+                arc_value[ii][iii] = arc_waiting[i][ii][iii]
+
+np.set_printoptions(suppress=True)
 
 # plot the # of step during evaluation
 fontsize = 16
-y_lowess = sm.nonparametric.lowess(steps_list, range(len(steps_list)), frac=0.1)  # 30 % lowess smoothing
+y_lowess = sm.nonparametric.lowess(steps_list, range(len(steps_list)), frac=0.1)
 plt.plot(y_lowess[:, 0], y_lowess[:, 1])
 plt.xlabel('Epochs', fontsize=fontsize)
 plt.ylabel('# of steps', fontsize=fontsize)
@@ -166,22 +178,35 @@ train_env.plot_trust(trust_lists)
 
 # show the result (pass to a not trainer environment and to a full greedy policy)
 # set the value for show after the training without the trust
-obs, _ = show_env.reset()
 
-# start the steps loop
-for step in range(max_episode_steps):
+steps = []
 
-    obs, rew, term, _ = train_wrapper.env_step(
-        show_env,
-        obs,
-        q_tables,
-        end_events,
-    )
+for _ in range(100):
 
-    print('agent_1:', show_env.agents[0].get_selected_task(), '  -  agent_2:', show_env.agents[1].get_selected_task())
+    obs, _ = show_env.reset()
 
-    train_wrapper.update_agents_states(show_env, arc_values)
+    # start the steps loop
+    for step in range(max_episode_steps):
 
-    if np.all(list(term.values())):
-        print('end in # ', step + 1)
-        break
+        # if step == 0:
+        #     time.sleep(5)
+
+        obs, rew, term, _ = train_wrapper.env_step(
+            show_env,
+            obs,
+            q_tables,
+            end_events,
+        )
+
+        # print('agent_1:', show_env.agents[0].get_selected_task(), '  -  agent_2:', show_env.agents[1].get_selected_task())
+
+        train_wrapper.update_agents_states(show_env, arc_values)  # DELETE
+        # train_wrapper.update_agents_states(show_env, trust)  # DELETE
+
+        if np.all(list(term.values())):
+            print('end in # ', step + 1)
+            steps.append(step + 1)
+            break
+
+print(steps)
+print(np.average(steps))

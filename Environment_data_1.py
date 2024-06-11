@@ -15,7 +15,7 @@ agents_initial_location = [
 ]
 
 # agents_prob = [1, 0]
-# agents_prob = [1, 0.5]
+# agents_prob = [1, 0.2]
 agents_prob = [1, 1]
 
 # actions names
@@ -23,6 +23,7 @@ actions = ['up', 'right', 'down', 'left', 'push_button', 'open_pocket_door',]
 
 # events that has to occur for complete the task
 events = ['door_1', 'door_2', 'door_3', 'red', 'blue_1', 'blue_2', 'target_1',]
+events_typology = ['door', 'button', 'target']
 
 # important event for each agent
 agent_1_events = ['door_1', 'red', 'blue_1', 'blue_2', 'target_1']

@@ -15,7 +15,7 @@ agents_initial_location = [
 ]
 
 # agents_prob = [1, 1]
-agents_prob = [1, 0.4]
+agents_prob = [1, 0.3]
 # agents_prob = [1, 0.05]
 
 # actions names
